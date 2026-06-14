@@ -1,0 +1,47 @@
+name: Update opencode contribution
+
+# Keeps the "Open-source contributions" block in the README in sync with the
+# LIVE pull requests on anomalyco/opencode (public data, built-in GITHUB_TOKEN).
+# Only the text between OPENCODE:START / OPENCODE:END is regenerated; commits
+# only when something actually changed. No `push` trigger -> no self-trigger loop.
+
+on:
+  schedule:
+    - cron: "30 4 * * *"   # daily 04:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opencode-pr
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Regenerate opencode block from live PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/opencode_pr.py
+
+      - name: Commit & push if changed
+        run: |
+          if [ -n "$(git status --porcelain README.md)" ]; then
+            git config user.name  "Manuel Guttmann"
+            git config user.email "manuelguttmann@icloud.com"
+            git commit -am "chore: refresh opencode PR stats [skip ci]"
+            git push
+            echo "committed updated opencode block"
+          else
+            echo "opencode block already up to date — nothing to commit"
+          fi
