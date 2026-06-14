@@ -1,0 +1,10 @@
+# Interne Arbeitsdokumente — NICHT im oeffentlichen Profil-Repo veroeffentlichen:
+DEPLOY.md
+PREVIEW.md
+STATS-ASSETS.md
+.markdownlint.jsonc
+
+# Secret-/Privacy-Scan-Reports — niemals committen:
+gitleaks-worktree-report.json
+gitleaks-history-report.json
+*.json

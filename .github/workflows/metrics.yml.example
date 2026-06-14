@@ -1,0 +1,74 @@
+# =============================================================================
+# OPTIONAL / DISABLED-BY-DEFAULT EXAMPLE — lowlighter/metrics
+# =============================================================================
+#
+# This file ends in `.example` ON PURPOSE: GitHub Actions only runs `*.yml` /
+# `*.yaml` files in .github/workflows/, so this template is INERT and will NOT
+# execute until you (the repo owner) explicitly opt in.
+#
+# To activate it:
+#   1. Create a CLASSIC Personal Access Token (PAT). The metrics action does NOT
+#      work with the built-in GITHUB_TOKEN — it needs a classic PAT (minimum
+#      scopes: `repo` for stats incl. private, or just `public_repo` for public;
+#      add `read:org` / `read:user` for org and follower data). A fine-grained
+#      token is NOT supported by all plugins.
+#   2. Add that PAT as a repository secret named `METRICS_TOKEN`.
+#   3. Rename this file to `metrics.yml`.
+#
+# Why it's optional here: the `profile-summary-cards.yml` and
+# `profile-3d-contrib.yml` workflows already cover stats and the contribution
+# visual using ONLY the built-in GITHUB_TOKEN (no PAT, no secret management).
+# `lowlighter/metrics` is far more powerful (dozens of plugins) but its PAT
+# requirement adds secret-management and token-rotation overhead. It is provided
+# as an OWNER DECISION: enable it only if you want metrics' richer plugin
+# output beyond what summary-cards + 3d-contrib already deliver.
+#
+# Output convention (consistent with the other workflows): committed SVG on the
+# `output` branch, embeddable at:
+#   https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-metrics.svg
+#
+# Action reference (verified June 2026): lowlighter/metrics@v3.34 (latest stable
+# release, Sep 2023; `@latest` tracks the same stable line). The metrics action
+# commits the SVG itself via output_action: commit + committer_branch.
+# -----------------------------------------------------------------------------
+name: Generate Metrics
+
+on:
+  # Daily refresh, staggered after the other asset workflows.
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-metrics
+  cancel-in-progress: false
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Generate metrics SVG
+        uses: lowlighter/metrics@v3.34
+        with:
+          # Classic PAT — NOT the built-in GITHUB_TOKEN (see header).
+          token: ${{ secrets.METRICS_TOKEN }}
+          # Whose metrics to render.
+          user: mguttmann
+          # Restrained, dark-friendly preset; two simple, dependable plugins.
+          template: classic
+          base: header, activity
+          plugin_languages: yes
+          plugin_languages_limit: 6
+          # Commit the rendered SVG to the shared `output` branch so it sits
+          # alongside the snake / summary-cards / 3d-contrib assets.
+          filename: github-metrics.svg
+          output_action: commit
+          committer_branch: output
+          config_timezone: Europe/Berlin

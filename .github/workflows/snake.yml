@@ -1,0 +1,90 @@
+# Snake contribution animation for the special profile repo `mguttmann/mguttmann`.
+#
+# Generates an animated SVG of the GitHub contribution graph "eaten" by a snake,
+# in a dark and a light variant, and pushes the result to a dedicated `output`
+# branch. The profile README embeds the SVGs from that branch via:
+#
+#   dark  -> https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake-dark.svg
+#   light -> https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake.svg
+#
+# Auth: the workflow uses the built-in `GITHUB_TOKEN` only. No Personal Access
+# Token (PAT) is required, because both the contribution read and the push to the
+# `output` branch happen inside this same repository. The `contents: write`
+# permission is what lets `GITHUB_TOKEN` push the generated branch.
+#
+# Action references are pinned to the current, actively maintained major tags
+# (verified June 2026): Platane/snk v3 (latest v3.5.0, Apr 2026) and
+# crazy-max/ghaction-github-pages v5 (latest v5.0.0, Mar 2026).
+name: Generate Snake Animation
+
+on:
+  # Refresh the animation automatically. Every 12 hours keeps the graph current
+  # without burning excessive Actions minutes.
+  schedule:
+    - cron: "0 */12 * * *"
+
+  # Allow manual runs from the Actions tab (useful for the first run / debugging).
+  workflow_dispatch:
+
+  # Regenerate whenever the default branch is updated.
+  push:
+    branches:
+      - main
+
+# Least-privilege: the only mutation this workflow performs is pushing the
+# generated SVGs to the `output` branch, which requires write access to repo
+# contents. Nothing else is granted.
+permissions:
+  contents: write
+
+# Serialize overlapping runs (scheduled + push) that would race to push the same
+# branch. We do NOT cancel in-progress runs, so a running generation is allowed
+# to finish rather than being aborted by a quickly following trigger.
+concurrency:
+  group: snake-animation
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Generate the contribution-grid snake animation as SVG (light + dark).
+      # `svg-only` is the faster variant of Platane/snk that skips GIF rendering.
+      # File names are chosen to match exactly what the profile README embeds
+      # from the `output` branch root.
+      - name: Generate snake SVGs (light + dark)
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          # One file per line. The dark variant uses the github-dark palette.
+          outputs: |
+            dist/github-contribution-grid-snake.svg
+            dist/github-contribution-grid-snake-dark.svg?palette=github-dark
+
+      # Push the contents of `dist/` to the `output` branch. After this, files
+      # are reachable at:
+      #   https://raw.githubusercontent.com/<owner>/<repo>/output/<file>
+      # i.e. dist/github-contribution-grid-snake.svg becomes
+      #   .../output/github-contribution-grid-snake.svg
+      - name: Push SVGs to the output branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output
+          build_dir: dist
+          # The `output` branch is shared: the profile-summary-cards and
+          # profile-3d-contrib workflows also publish their SVGs there. Those
+          # workflows set `keep_history: true`, which clones the existing branch
+          # and commits additively. We MUST do the same here, otherwise the
+          # default `keep_history: false` would force-push a clean tree and
+          # delete their assets on every snake run. `true` preserves all
+          # co-existing files on `output`.
+          keep_history: true
+          commit_message: "chore: refresh snake contribution animation"
+          # Skip empty commits so the `output` branch only gets a new commit when
+          # the generated SVGs actually changed (avoids history churn on every
+          # 12-hour scheduled run).
+          allow_empty_commit: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
