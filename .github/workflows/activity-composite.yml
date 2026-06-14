@@ -189,8 +189,11 @@ jobs:
           Removes exactly ONE outermost <g> group: the language legend + donut
           panel, identified by a stable content signature (independent of the
           translate(x,y) coordinates):
-            * a fill-fg language label  <text ... font-size="21.6...px">HTML<  AND
-            * the donut title           <title>HTML 2</title>
+            * a fill-fg language label  <text ... font-size="21.6...px">LANG<  AND
+            * a donut segment title     <title>LANG N</title>  (a name + a count)
+          The match is language-AGNOSTIC: it never hardcodes a top language (e.g.
+          HTML), so it keeps working as repos go public and the language mix
+          shifts (the ~21.6px label font-size is unique to this panel).
           Group boundaries are found via correct <g>/</g> tag-balance matching.
           Aborts non-zero on 0 or disjoint matches. Standard library only.
 
@@ -199,10 +202,13 @@ jobs:
           import re
           import sys
 
+          # Language-AGNOSTIC signatures (do NOT hardcode "HTML" - the top
+          # language changes as repos go public). The ~21.6px label font-size is
+          # unique to the language legend; donut segment titles read "LANG N".
           LANG_LABEL_RE = re.compile(
-              r'<text\b[^>]*\bfont-size="21\.6[0-9]*px"[^>]*>HTML<'
+              r'<text\b[^>]*\bfont-size="21\.6[0-9]*px"[^>]*>[^<]+<'
           )
-          DONUT_TITLE = '<title>HTML 2</title>'
+          DONUT_TITLE_RE = re.compile(r'<title>[A-Za-z][^<]*\s\d+(?:\.\d+)?</title>')
           G_TAG_RE = re.compile(r'<g(?=[\s>])|</g>')
 
 
@@ -226,7 +232,7 @@ jobs:
                       continue
                   s, e = bounds
                   block = svg[s:e]
-                  if DONUT_TITLE in block and LANG_LABEL_RE.search(block):
+                  if DONUT_TITLE_RE.search(block) and LANG_LABEL_RE.search(block):
                       matches.append((s, e))
               if not matches:
                   raise ValueError("No language-panel group found (0 candidates).")
@@ -269,9 +275,10 @@ jobs:
               sys.exit(main(sys.argv))
           PYEOF
           python3 "${RUNNER_TEMP}/strip_lang_panel.py" profile-3d-contrib/profile-night-rainbow.svg
-          # Fail loudly if any language label survived the cut.
-          if grep -q '>HTML<\|>other<\|HTML 2' profile-3d-contrib/profile-night-rainbow.svg; then
-            echo "ERROR: language label still present after strip" >&2
+          # Fail loudly if the language legend survived. Its ~21.6px label
+          # font-size is unique to that panel, so this check is language-agnostic.
+          if grep -q 'font-size="21\.6' profile-3d-contrib/profile-night-rainbow.svg; then
+            echo "ERROR: language panel still present after strip" >&2
             exit 1
           fi
           # Confirm the stripped result is still well-formed XML.
