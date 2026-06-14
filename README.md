@@ -174,7 +174,7 @@ By night I build open-source MCP servers and agent tooling.
 
   DON'T 8 (INSPIRATION.md): the account is young, so public activity may be thin.
   The stats/streak are therefore embedded at a modest size — NOT a giant hero. The
-  real substance is the five Featured projects below (real MCP repos), not the numbers.
+  real substance is the open-source work below, not the numbers.
 -->
 
 <div align="center">
@@ -243,9 +243,9 @@ By night I build open-source MCP servers and agent tooling.
 ## :rocket: Featured projects
 
 <!--
-  Only PUBLIC, non-fork repos are featured. These pin-cards pull live metadata from
-  github-readme-stats. All five repos confirmed public & non-fork via gh on 2026-06-13.
-  LANG: the one-line blurbs under the grid are language-dependent.
+  Only PUBLIC, non-fork repos are featured. This pin-card pulls live metadata from
+  github-readme-stats. claude-team-hierarchy confirmed public & non-fork via gh on 2026-06-14.
+  LANG: the one-line blurb under the card is language-dependent.
 -->
 
 <div align="center">
@@ -253,33 +253,11 @@ By night I build open-source MCP servers and agent tooling.
 <a href="https://github.com/mguttmann/claude-team-hierarchy">
   <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=claude-team-hierarchy&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="claude-team-hierarchy" />
 </a>
-<a href="https://github.com/mguttmann/the-real-unifi-mcp">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-unifi-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-unifi-mcp" />
-</a>
-
-<br/>
-
-<a href="https://github.com/mguttmann/the-real-bitwarden-mcp">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-bitwarden-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-bitwarden-mcp" />
-</a>
-<a href="https://github.com/mguttmann/the-real-hetzner-mcp">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-hetzner-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-hetzner-mcp" />
-</a>
-
-<br/>
-
-<a href="https://github.com/mguttmann/the-real-snipeit-mcp">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-snipeit-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-snipeit-mcp" />
-</a>
 
 </div>
 
 <!-- LANG: project blurbs below are language-dependent. -->
 - **[claude-team-hierarchy](https://github.com/mguttmann/claude-team-hierarchy)** — a Claude Code plugin for nested, 5-level team-lead orchestration (opus-only dispatch, author ≠ reviewer, mandatory memory). *Shell.*
-- **[the-real-unifi-mcp](https://github.com/mguttmann/the-real-unifi-mcp)** — an MCP server covering the UniFi Site Manager + Network APIs (100% coverage, cloud-only). *TypeScript.*
-- **[the-real-bitwarden-mcp](https://github.com/mguttmann/the-real-bitwarden-mcp)** — a local MCP server for Bitwarden (Public API + Secrets Manager), 50+ admin tools. *TypeScript.*
-- **[the-real-hetzner-mcp](https://github.com/mguttmann/the-real-hetzner-mcp)** — the entire Hetzner Cloud API as 201 typed MCP tools (read & write). *TypeScript.*
-- **[the-real-snipeit-mcp](https://github.com/mguttmann/the-real-snipeit-mcp)** — an MCP server for the Snipe-IT IT-asset-management REST API (100% coverage). *TypeScript.*
 
 <br/>
 
