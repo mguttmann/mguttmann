@@ -25,17 +25,23 @@
 #     otherwise). If the script is nevertheless invoked without a token it
 #     fails loud (exit 1) rather than emitting a wrong/empty card.
 #
-# PRIVACY: the SVG and the README never expose private repository NAMES or URLs.
+# PRIVACY: the SVGs and the README never expose private repository NAMES or URLs.
 # Only the AGGREGATE language byte distribution is rendered.
 #
-# Output: a single SVG (default dist/top-languages.svg). Deterministic: languages
-# are sorted by bytes descending, then by name, so identical data yields an
-# identical file (no pseudo-diff churn on the daily schedule).
+# Output: TWO SVGs from the SAME aggregated data, written into dist/ so the
+# workflow's existing push step commits both:
+#   - dist/top-languages.svg        — horizontal bar card  (LANGCARD_OUTPUT)
+#   - dist/top-languages-donut.svg  — donut ring + legend  (LANGDONUT_OUTPUT)
+# The README embeds only the donut (in the Activity section); the bar card is
+# kept generated for continuity but is no longer embedded. Deterministic:
+# languages are sorted by bytes descending, then by name, so identical data
+# yields byte-identical files (no pseudo-diff churn on the daily schedule).
 # ---------------------------------------------------------------------------
 
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import urllib.error
@@ -48,6 +54,10 @@ OWNER = os.environ.get("LANGCARD_OWNER", "mguttmann")
 # How many languages to show explicitly before bucketing the rest into "Other".
 TOP_N = int(os.environ.get("LANGCARD_TOP_N", "8"))
 OUTPUT_PATH = os.environ.get("LANGCARD_OUTPUT", "dist/top-languages.svg")
+# Donut card output (rendered from the SAME aggregated data as the bar card).
+DONUT_OUTPUT_PATH = os.environ.get(
+    "LANGDONUT_OUTPUT", "dist/top-languages-donut.svg"
+)
 # Cap pagination defensively (100 repos/page * 10 pages = 1000 repos).
 MAX_PAGES = 10
 
@@ -247,6 +257,143 @@ def render_svg(rows: List[Tuple[str, int, float]]) -> str:
     return "\n".join(parts) + "\n"
 
 
+def _fmt_num(value: float) -> str:
+    """Compact, deterministic number formatting for the percent labels.
+
+    One decimal place, trailing ``.0`` kept for visual alignment in the legend.
+    """
+    return f"{value:.1f}"
+
+
+def render_donut_svg(rows: List[Tuple[str, int, float]]) -> str:
+    """Render the Executive Dark Luxury top-languages SVG as a DONUT + legend.
+
+    Same aggregated data as :func:`render_svg`; only the visual form differs.
+
+    Geometry: each language is one arc of a ring drawn with the stroke-dasharray
+    technique on a full ``<circle>`` (circumference C). A segment of share ``p``
+    gets ``stroke-dasharray="p*C  C-p*C"`` and a ``stroke-dashoffset`` equal to
+    the cumulative length already consumed, so segments are laid end-to-end. The
+    ring is rotated -90 degrees (via the group transform) so it starts at 12
+    o'clock and runs clockwise. This is fully deterministic for identical input.
+    """
+    # Layout: ring on the left, legend on the right.
+    width = 480
+    height = 232
+    pad = 24
+
+    # Ring geometry (left side).
+    cx = 128
+    cy = height / 2
+    radius = 70          # radius of the stroked circle (centre line of the ring)
+    ring_w = 26          # ring thickness (stroke width)
+    circumference = 2.0 * math.pi * radius
+
+    parts: List[str] = []
+    parts.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" viewBox="0 0 {width} {height}" '
+        f'role="img" aria-labelledby="dtitle ddesc" '
+        f'font-family="Segoe UI, Helvetica, Arial, sans-serif">'
+    )
+    parts.append(
+        '<title id="dtitle">Most used languages across public and private '
+        "repositories (forks excluded)</title>"
+    )
+    parts.append(
+        '<desc id="ddesc">Donut chart of the aggregate share of programming '
+        "languages by bytes across Manuel Guttmann's own GitHub repositories, "
+        "forks excluded. No private repository names are shown.</desc>"
+    )
+    # Card background with subtle rounded corners + 1px copper border.
+    parts.append(
+        f'<rect x="0.5" y="0.5" width="{width - 1}" height="{height - 1}" '
+        f'rx="10" fill="{BG}" stroke="{COPPER}" stroke-opacity="0.35" '
+        f'stroke-width="1"/>'
+    )
+
+    # Track ring (full circle in the surface colour). It is drawn UNDER the
+    # coloured segments so the small gap left between adjacent segments reveals
+    # this darker surface as a crisp separator line — this keeps neighbouring
+    # segments visually distinct even when their copper/champagne hues are close
+    # in lightness (the legend additionally labels every segment).
+    parts.append(
+        f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="none" '
+        f'stroke="{SURFACE}" stroke-width="{ring_w}"/>'
+    )
+
+    # A small fixed gap (in px along the circumference) is removed from the END of
+    # every visible arc so that a thin slice of the dark track shows through
+    # between segments. The cumulative position still advances by the FULL segment
+    # length, so percentages stay exact and the layout is deterministic.
+    seg_gap = 2.0
+    # Coloured segments, laid end-to-end starting at 12 o'clock (clockwise).
+    parts.append(f'<g transform="rotate(-90 {cx} {cy})">')
+    cumulative = 0.0
+    for i, (name, _size, pct) in enumerate(rows):
+        seg_len = circumference * pct / 100.0
+        color = OTHER_COLOR if name == "Other" else BAR_COLORS[i % len(BAR_COLORS)]
+        # Visible arc = segment minus the separator gap, but never below a small
+        # minimum so a tiny share still registers as a sliver.
+        visible = max(1.0, seg_len - seg_gap)
+        # dasharray: visible arc, then the rest of the circle as a gap.
+        dash = f"{round(visible, 3)} {round(circumference - visible, 3)}"
+        # offset shifts the dash pattern back by the already-consumed length so
+        # this segment begins exactly where the previous one ended.
+        offset = round(-cumulative, 3)
+        parts.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="none" '
+            f'stroke="{color}" stroke-width="{ring_w}" '
+            f'stroke-dasharray="{dash}" stroke-dashoffset="{offset}"/>'
+        )
+        cumulative += seg_len
+    parts.append("</g>")
+
+    # Centre label: dominant language + its share (no token, no repo names).
+    if rows:
+        top_name, _ts, top_pct = rows[0]
+        parts.append(
+            f'<text x="{cx}" y="{cy - 4}" fill="{OFFWHITE}" font-size="20" '
+            f'font-weight="700" text-anchor="middle">{_fmt_num(top_pct)}%</text>'
+        )
+        parts.append(
+            f'<text x="{cx}" y="{cy + 16}" fill="{COPPER}" font-size="12" '
+            f'font-weight="600" text-anchor="middle">{escape(top_name)}</text>'
+        )
+
+    # Legend (right side): colour swatch + language name + percent, one per row.
+    legend_x = 248
+    legend_top = 40
+    legend_row_h = 21
+    swatch = 11
+    parts.append(
+        f'<text x="{legend_x}" y="{legend_top - 12}" fill="{COPPER}" '
+        f'font-size="13" font-weight="600">Most used languages</text>'
+    )
+    for i, (name, _size, pct) in enumerate(rows):
+        row_y = legend_top + i * legend_row_h
+        color = OTHER_COLOR if name == "Other" else BAR_COLORS[i % len(BAR_COLORS)]
+        safe_name = escape(name)
+        # Swatch.
+        parts.append(
+            f'<rect x="{legend_x}" y="{row_y}" width="{swatch}" '
+            f'height="{swatch}" rx="2" fill="{color}"/>'
+        )
+        # Language name.
+        parts.append(
+            f'<text x="{legend_x + swatch + 8}" y="{row_y + swatch - 1}" '
+            f'fill="{OFFWHITE}" font-size="12">{safe_name}</text>'
+        )
+        # Percent (right-aligned within the card).
+        parts.append(
+            f'<text x="{width - pad}" y="{row_y + swatch - 1}" fill="{MUTED}" '
+            f'font-size="12" text-anchor="end">{_fmt_num(pct)}%</text>'
+        )
+
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
 def main() -> int:
     token = os.environ.get("STATS_TOKEN", "").strip()
     if not token:
@@ -281,14 +428,18 @@ def main() -> int:
     for name, _size, pct in rows:
         print(f"  {name:<14} {pct:5.1f}%", file=sys.stderr)
 
-    svg = render_svg(rows)
+    # Render BOTH cards from the SAME rows: the bar card (kept for continuity)
+    # and the donut card (embedded in the README's Activity section).
+    bar_svg = render_svg(rows)
+    donut_svg = render_donut_svg(rows)
 
-    out_dir = os.path.dirname(OUTPUT_PATH)
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as handle:
-        handle.write(svg)
-    print(f"wrote {OUTPUT_PATH} ({len(svg)} bytes)", file=sys.stderr)
+    for path, svg in ((OUTPUT_PATH, bar_svg), (DONUT_OUTPUT_PATH, donut_svg)):
+        out_dir = os.path.dirname(path)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(svg)
+        print(f"wrote {path} ({len(svg)} bytes)", file=sys.stderr)
     return 0
 
 
