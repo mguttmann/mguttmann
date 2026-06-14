@@ -141,12 +141,12 @@ By night I build open-source MCP servers and agent tooling.
        - mguttmann/opencode is a FORK of anomalyco/opencode (TypeScript). The fork
          carries 0 of his own commits, so it is NOT presented as "his code".
        - His real contribution is via PULL REQUESTS to upstream anomalyco/opencode:
-         18 PRs opened in total — 1 still open (#32167), 17 already closed, and none
+         19 PRs opened in total — 1 still open (#32301), 18 already closed, and none
          landed. He is therefore an ACTIVE CONTRIBUTOR / proposer via PRs, not a
          project maintainer, and does not own opencode.
-       - The headline number +54,942 / −3,861 is the SIZE OF THE OPEN PR #32167
+       - The headline number +7,653 / −241 is the SIZE OF THE OPEN PR #32301
          (proposed changes), retrieved with
-         `gh pr view 32167 --repo anomalyco/opencode --json additions,deletions,state`.
+         `gh pr view 32301 --repo anomalyco/opencode --json additions,deletions,state`.
          It is described as a still-open PR with proposed changes.
      HONESTY: the rendered copy below claims neither an integrated PR nor ownership;
      opencode is labelled a fork plus an open PR, contribution only.
@@ -184,18 +184,18 @@ By night I build open-source MCP servers and agent tooling.
   (NOT a github-readme-stats pin) so it cannot be mistaken for one of his own repos and
   is not subject to the flaky live aggregate host. Theme-consistent copper #C8A06A /
   surface #14141B badges. Every word is qualified: "contributing to", "open PR",
-  "proposed". The badge label says "open PR #32167" and stays in proposed-not-landed
+  "proposed". The badge label says "open PR #32301" and stays in proposed-not-landed
   language throughout.
 -->
 ### :handshake: Open-source contributions
 
 <div align="center">
 
-<a href="https://github.com/anomalyco/opencode/pull/32167">
+<a href="https://github.com/anomalyco/opencode/pull/32301">
   <img src="https://img.shields.io/badge/opencode-contributing%20via%20PRs-C8A06A?style=for-the-badge&logo=github&logoColor=14141B&labelColor=14141B" alt="opencode — contributing via pull requests" />
 </a>
-<a href="https://github.com/anomalyco/opencode/pull/32167">
-  <img src="https://img.shields.io/badge/open%20PR-%2332167%20·%20%2B54.9k%20lines%20proposed-C8A06A?style=for-the-badge&labelColor=14141B" alt="Open PR #32167 — +54.9k lines proposed" />
+<a href="https://github.com/anomalyco/opencode/pull/32301">
+  <img src="https://img.shields.io/badge/open%20PR-%2332301%20·%20%2B7.6k%20lines%20proposed-C8A06A?style=for-the-badge&labelColor=14141B" alt="Open PR #32301 — +7.6k lines proposed" />
 </a>
 
 </div>
@@ -205,10 +205,10 @@ By night I build open-source MCP servers and agent tooling.
 
 Active **open-source contributor** to [`anomalyco/opencode`](https://github.com/anomalyco/opencode)
 via pull requests — working from [my fork](https://github.com/mguttmann/opencode).
-Headlining the **[open PR #32167](https://github.com/anomalyco/opencode/pull/32167)**:
-*"nested sub-agent spawning (up to 5 levels) + multi-agent workflow orchestration"* —
-**~55k lines proposed** (`+54,942 / −3,861`), **currently open** and awaiting upstream
-review (proposed changes, not yet accepted). 18 PRs opened in total (1 open, 17 closed).
+Headlining the **[open PR #32301](https://github.com/anomalyco/opencode/pull/32301)**:
+*"nested sub-agent spawning (up to 5 levels) + fixes for #23091 / #13715"* —
+**~7.7k lines proposed** (`+7,653 / −241`), **currently open** and awaiting upstream
+review (proposed changes, not yet accepted). 19 PRs opened in total (1 open, 18 closed).
 
 <br/>
 
