@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="232" viewBox="0 0 480 232" role="img" aria-labelledby="dtitle ddesc" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="dtitle">Most used languages across public and private repositories (forks excluded)</title>
+<desc id="ddesc">Donut chart of the aggregate share of programming languages by bytes across Manuel Guttmann's own GitHub repositories, forks excluded. No private repository names are shown.</desc>
+<rect x="0.5" y="0.5" width="479" height="231" rx="10" fill="#0E0E13" stroke="#C8A06A" stroke-opacity="0.35" stroke-width="1"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#14141B" stroke-width="26"/>
+<g transform="rotate(-90 128 116.0)">
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#C8A06A" stroke-width="26" stroke-dasharray="222.12 217.703" stroke-dashoffset="-0.0"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#D9B583" stroke-width="26" stroke-dasharray="55.122 384.701" stroke-dashoffset="-224.12"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#B98E55" stroke-width="26" stroke-dasharray="40.148 399.675" stroke-dashoffset="-281.242"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#E3C79A" stroke-width="26" stroke-dasharray="39.096 400.727" stroke-dashoffset="-323.39"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#9E8B6E" stroke-width="26" stroke-dasharray="36.238 403.585" stroke-dashoffset="-364.485"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#C2B59B" stroke-width="26" stroke-dasharray="16.393 423.43" stroke-dashoffset="-402.723"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#7E7866" stroke-width="26" stroke-dasharray="2.515 437.308" stroke-dashoffset="-421.117"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#A89274" stroke-width="26" stroke-dasharray="2.042 437.781" stroke-dashoffset="-425.632"/>
+<circle cx="128" cy="116.0" r="70" fill="none" stroke="#8A8578" stroke-width="26" stroke-dasharray="8.15 431.673" stroke-dashoffset="-429.673"/>
+</g>
+<text x="128" y="112.0" fill="#ECE7DF" font-size="20" font-weight="700" text-anchor="middle">51.0%</text>
+<text x="128" y="132.0" fill="#C8A06A" font-size="12" font-weight="600" text-anchor="middle">TypeScript</text>
+<text x="248" y="28" fill="#C8A06A" font-size="13" font-weight="600">Most used languages</text>
+<rect x="248" y="40" width="11" height="11" rx="2" fill="#C8A06A"/>
+<text x="267" y="50" fill="#ECE7DF" font-size="12">TypeScript</text>
+<text x="456" y="50" fill="#8A8578" font-size="12" text-anchor="end">51.0%</text>
+<rect x="248" y="61" width="11" height="11" rx="2" fill="#D9B583"/>
+<text x="267" y="71" fill="#ECE7DF" font-size="12">JavaScript</text>
+<text x="456" y="71" fill="#8A8578" font-size="12" text-anchor="end">13.0%</text>
+<rect x="248" y="82" width="11" height="11" rx="2" fill="#B98E55"/>
+<text x="267" y="92" fill="#ECE7DF" font-size="12">HTML</text>
+<text x="456" y="92" fill="#8A8578" font-size="12" text-anchor="end">9.6%</text>
+<rect x="248" y="103" width="11" height="11" rx="2" fill="#E3C79A"/>
+<text x="267" y="113" fill="#ECE7DF" font-size="12">C#</text>
+<text x="456" y="113" fill="#8A8578" font-size="12" text-anchor="end">9.3%</text>
+<rect x="248" y="124" width="11" height="11" rx="2" fill="#9E8B6E"/>
+<text x="267" y="134" fill="#ECE7DF" font-size="12">Python</text>
+<text x="456" y="134" fill="#8A8578" font-size="12" text-anchor="end">8.7%</text>
+<rect x="248" y="145" width="11" height="11" rx="2" fill="#C2B59B"/>
+<text x="267" y="155" fill="#ECE7DF" font-size="12">PowerShell</text>
+<text x="456" y="155" fill="#8A8578" font-size="12" text-anchor="end">4.2%</text>
+<rect x="248" y="166" width="11" height="11" rx="2" fill="#7E7866"/>
+<text x="267" y="176" fill="#ECE7DF" font-size="12">Swift</text>
+<text x="456" y="176" fill="#8A8578" font-size="12" text-anchor="end">1.0%</text>
+<rect x="248" y="187" width="11" height="11" rx="2" fill="#A89274"/>
+<text x="267" y="197" fill="#ECE7DF" font-size="12">CSS</text>
+<text x="456" y="197" fill="#8A8578" font-size="12" text-anchor="end">0.9%</text>
+<rect x="248" y="208" width="11" height="11" rx="2" fill="#8A8578"/>
+<text x="267" y="218" fill="#ECE7DF" font-size="12">Other</text>
+<text x="456" y="218" fill="#8A8578" font-size="12" text-anchor="end">2.3%</text>
+</svg>
