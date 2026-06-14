@@ -83,9 +83,11 @@ jobs:
       # No SETTING_JSON => the 10 default files documented above are produced.
       - name: Generate 3D contribution calendar
         uses: yoshi389111/github-profile-3d-contrib@v0.9.2
+        # v0.9.2 declares NO action inputs; the target user is read from the
+        # USERNAME environment variable (not a `with:` input). Passing it via
+        # `with:` is ignored ("USERNAME is empty"), so it lives in `env:` here.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
           USERNAME: ${{ github.repository_owner }}
 
       # Move the generated folder under a staging dir so that crazy-max copies
