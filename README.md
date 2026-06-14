@@ -173,6 +173,36 @@ By night I build open-source MCP servers and agent tooling.
 
 <sub>Shell · 0★</sub>
 
+<a href="https://github.com/mguttmann/code-audit-suite">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=code-audit-suite&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="code-audit-suite — pinned repository" />
+</a>
+
+<sub>Shell · 0★</sub>
+
+<a href="https://github.com/mguttmann/the-real-hetzner-mcp">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-hetzner-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-hetzner-mcp — pinned repository" />
+</a>
+
+<sub>TypeScript · 0★</sub>
+
+<a href="https://github.com/mguttmann/the-real-snipeit-mcp">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-snipeit-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-snipeit-mcp — pinned repository" />
+</a>
+
+<sub>TypeScript · 0★</sub>
+
+<a href="https://github.com/mguttmann/the-real-bitwarden-mcp">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-bitwarden-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-bitwarden-mcp — pinned repository" />
+</a>
+
+<sub>TypeScript · 0★</sub>
+
+<a href="https://github.com/mguttmann/the-real-unifi-mcp">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-unifi-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-unifi-mcp — pinned repository" />
+</a>
+
+<sub>TypeScript · 0★</sub>
+
 </div>
 
 <!-- FEATURED:END -->
