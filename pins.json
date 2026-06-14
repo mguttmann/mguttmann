@@ -1,0 +1,10 @@
+[
+  {
+    "name": "claude-team-hierarchy",
+    "description": "Claude Code plugin: nested 5-level team-lead orchestration (CEO delegates only, opus-only dispatch, author != reviewer, mandatory memory) — skill + subagents + /team-start command + opus-enforcement hook.",
+    "language": "Shell",
+    "url": "https://github.com/mguttmann/claude-team-hierarchy",
+    "isFork": false,
+    "stars": 0
+  }
+]
