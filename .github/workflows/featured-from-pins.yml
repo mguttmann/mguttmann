@@ -1,0 +1,257 @@
+# Featured-from-pins sync for the special profile repo `mguttmann/mguttmann`.
+#
+# Keeps the "Featured projects" section of the profile README in lock-step with
+# the repositories the owner has PINNED on the profile. On every run it:
+#   1. reads the pinned repositories via the GitHub GraphQL API,
+#   2. regenerates the block between the load-bearing markers
+#        <!-- FEATURED:START -->  ...  <!-- FEATURED:END -->
+#      in README.md (one theme-consistent pin card per pinned repo, fork
+#      honestly labelled) and commits it back to `main` IDEMPOTENTLY, and
+#   3. writes a machine-readable `pins.json` contract and publishes it to the
+#      shared `output` branch (next to the snake / summary-card / 3d-contrib
+#      assets) at:
+#        https://raw.githubusercontent.com/mguttmann/mguttmann/output/pins.json
+#
+# ---------------------------------------------------------------------------
+# AUTH / TOKEN FEASIBILITY (verified against official GitHub docs, June 2026):
+#   The built-in `GITHUB_TOKEN` is sufficient to read PUBLIC pinned items via
+#   GraphQL. GITHUB_TOKEN is a GitHub App installation access token
+#   (docs.github.com/en/actions/concepts/security/github_token), and since
+#   2023-04-27 GitHub Apps "have `read` access to public resources via GraphQL
+#   by default when using user-to-server tokens ... even if they are not
+#   installed on the organization or user that owns the resource"
+#   (github.blog/changelog/2023-04-27-graphql-improvements-for-fine-grained-pats-and-github-apps).
+#   The pinned repos here are PUBLIC, so no private PAT is required.
+#
+#   PUBLIC-ONLY GRACEFUL FALLBACK (no private PAT, ever): the read step is
+#   defensive. If GraphQL ever returns no usable nodes (token change, outage),
+#   the job does NOT fail and does NOT silently demand a PAT — it logs a clear
+#   warning and SKIPS the README/pins.json update for that run, leaving the
+#   last good content in place. (An optional PAT path is described in a comment
+#   on the read step but is intentionally NOT wired in; the default is
+#   public-only.) GraphQL has no unauthenticated mode, so the only token-free
+#   public alternative would be HTML scraping — deliberately avoided.
+#
+# ---------------------------------------------------------------------------
+# LOOP / RE-TRIGGER PROTECTION (the README commit lands on `main`, which this
+#   workflow also watches on push):
+#     (a) PRIMARY: the README commit is pushed with `GITHUB_TOKEN`, and
+#         "events triggered by the GITHUB_TOKEN will not create a new workflow
+#         run" (docs.github.com/en/actions/concepts/security/github_token),
+#         so the bot's own push cannot re-trigger this workflow.
+#     (b) BELT-AND-SUSPENDERS: the commit message carries `[skip ci]`, a
+#         documented skip directive for push/pull_request events
+#         (docs.github.com/en/actions/.../skipping-workflow-runs).
+#   A human editing README.md by hand (no `[skip ci]`) still re-syncs normally.
+#
+# Action references pinned to current, maintained refs (verified June 2026):
+#   - actions/checkout@v4
+#   - crazy-max/ghaction-github-pages@v5 (output-branch publish, keep_history)
+name: Sync Featured from Pins
+
+on:
+  # Refresh once a day in the early morning (UTC), staggered after the other
+  # output-branch publishers (summary-cards 05:00, 3d-contrib 05:30) to avoid
+  # racing for the shared `output` branch.
+  schedule:
+    - cron: "0 6 * * *"
+
+  # Allow manual runs from the Actions tab (used for the first run / debugging).
+  workflow_dispatch:
+
+  # Re-sync whenever the default branch is updated. The bot's own README commit
+  # is pushed with GITHUB_TOKEN and additionally carries [skip ci], so it does
+  # NOT recurse (see LOOP PROTECTION above); a manual README edit still triggers.
+  push:
+    branches:
+      - main
+
+# Least-privilege: the workflow reads public pins (covered by the default public
+# read access of GITHUB_TOKEN) and writes back the README commit on `main` plus
+# pins.json on `output`, both of which need write access to repo contents.
+permissions:
+  contents: write
+
+# Serialize overlapping runs (scheduled + push) that would race to push the
+# shared `output` branch / commit README. Do not cancel an in-progress run.
+concurrency:
+  group: featured-from-pins
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---- STEP 1: read pinned repositories via GraphQL -------------------
+      # Uses the built-in GITHUB_TOKEN (sufficient for PUBLIC pins, see header).
+      # Writes the raw GraphQL response to pins_raw.json. The query is the exact
+      # contract query agreed for this profile. On any failure we DO NOT abort
+      # the job: we emit a warning and let STEP 2 detect "no pins" and skip the
+      # update, so a transient API issue never wipes the Featured block.
+      #
+      # OPTIONAL PAT PATH (NOT enabled by default — public-only is the default):
+      #   To read PRIVATE pins or raise rate limits, add a repo secret e.g.
+      #   PINS_TOKEN and change the Authorization header below to use it. Leave
+      #   it on GITHUB_TOKEN for a public profile.
+      - name: Read pinned repositories (GraphQL, public-read via GITHUB_TOKEN)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          query='{user(login:"mguttmann"){pinnedItems(first:6,types:REPOSITORY){nodes{...on Repository{name description url primaryLanguage{name} isFork stargazerCount}}}}}'
+          if gh api graphql -f query="$query" > pins_raw.json 2> gql_err.txt; then
+            echo "GraphQL pinnedItems read OK"
+          else
+            echo "::warning::GraphQL pinnedItems read FAILED (public-only, no PAT fallback). Leaving README/pins.json unchanged for this run."
+            cat gql_err.txt || true
+            # Write an empty-but-valid response so STEP 2 treats it as 'no usable
+            # pins' and SKIPS the update (rather than crashing the job).
+            echo '{"data":{"user":{"pinnedItems":{"nodes":[]}}}}' > pins_raw.json
+          fi
+          echo "---- pins_raw.json ----"
+          cat pins_raw.json
+
+      # ---- STEP 2: render FEATURED block + pins.json, commit README -------
+      # The generator is written inline (single source of truth) and is fully
+      # idempotent: identical pins -> byte-identical README block and pins.json.
+      # If GraphQL returned zero usable nodes, we SKIP all writes this run.
+      - name: Generate Featured block + pins.json and commit README
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # --- guard: if no usable pins, skip the update entirely ---
+          node_count=$(python3 -c "import json;d=json.load(open('pins_raw.json'));print(len(d.get('data',{}).get('user',{}).get('pinnedItems',{}).get('nodes',[]) or []))")
+          if [ "$node_count" -eq 0 ]; then
+            echo "::warning::No usable pinned repositories found — skipping README/pins.json update (last good content preserved)."
+            echo "skip_update=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "Found $node_count pinned repositories."
+
+          # --- write the idempotent generator (mirrors the local dry-run) ---
+          cat > gen_featured.py <<'PYEOF'
+          import argparse, json, re, sys
+          START = "<!-- FEATURED:START -->"
+          END = "<!-- FEATURED:END -->"
+          PIN_CARD_BASE = (
+              "https://github-readme-stats.vercel.app/api/pin/"
+              "?username=mguttmann&repo={repo}"
+              "&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A"
+              "&text_color=ECE7DF&hide_border=true"
+          )
+
+          def normalize_pins(raw):
+              nodes = (raw.get("data", {}).get("user", {})
+                       .get("pinnedItems", {}).get("nodes", []))
+              pins = []
+              for n in nodes:
+                  if not n:
+                      continue
+                  lang = n.get("primaryLanguage")
+                  if isinstance(lang, dict):
+                      lang = lang.get("name")
+                  pins.append({
+                      "name": n.get("name", ""),
+                      "description": n.get("description") or "",
+                      "language": lang if lang else None,
+                      "url": n.get("url", ""),
+                      "isFork": bool(n.get("isFork", False)),
+                      "stars": int(n.get("stargazerCount", 0) or 0),
+                  })
+              return pins
+
+          def render_card(pin):
+              card_url = PIN_CARD_BASE.format(repo=pin["name"])
+              bits = []
+              if pin["language"]:
+                  bits.append(pin["language"])
+              bits.append(f"{pin['stars']}★" if pin["stars"] else "0★")
+              if pin["isFork"]:
+                  bits.append("fork")
+              meta = " · ".join(bits)
+              return "\n".join([
+                  f'<a href="{pin["url"]}">',
+                  f'  <img src="{card_url}" alt="{pin["name"]} — pinned repository" />',
+                  "</a>",
+                  "",
+                  f"<sub>{meta}</sub>",
+              ])
+
+          def render_block(pins):
+              if not pins:
+                  inner = ('<sub><em>No pinned repositories yet — '
+                           "pin a repository on the profile to feature it here.</em></sub>")
+              else:
+                  inner = "\n\n".join(render_card(p) for p in pins)
+              return f'{START}\n\n<div align="center">\n\n{inner}\n\n</div>\n\n{END}'
+
+          def replace_block(text, block):
+              pat = re.compile(re.escape(START) + r".*?" + re.escape(END), re.DOTALL)
+              if not pat.search(text):
+                  raise SystemExit("ERROR: FEATURED markers not found in README.")
+              return pat.sub(lambda _m: block, text, count=1)
+
+          ap = argparse.ArgumentParser()
+          ap.add_argument("--pins-file", required=True)
+          ap.add_argument("--readme", required=True)
+          ap.add_argument("--pins-out", required=True)
+          a = ap.parse_args()
+          raw = json.load(open(a.pins_file, encoding="utf-8"))
+          pins = normalize_pins(raw)
+          open(a.pins_out, "w", encoding="utf-8").write(
+              json.dumps(pins, ensure_ascii=False, indent=2) + "\n")
+          text = open(a.readme, encoding="utf-8").read()
+          open(a.readme, "w", encoding="utf-8").write(
+              replace_block(text, render_block(pins)))
+          sys.stderr.write(f"[gen] pins={len(pins)}\n")
+          PYEOF
+
+          python3 gen_featured.py --pins-file pins_raw.json --readme README.md --pins-out pins.json
+          echo "---- generated pins.json ----"
+          cat pins.json
+
+          # --- commit README to main ONLY if it actually changed (idempotent) ---
+          # pins.json is published to the `output` branch in STEP 3, so it must
+          # NOT be committed to main here.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- README.md; then
+            echo "README unchanged — nothing to commit (idempotent no-op)."
+          else
+            git add README.md
+            # [skip ci] + the GITHUB_TOKEN no-recurse rule prevent a trigger loop.
+            git commit -m "chore: sync Featured projects from pins [skip ci]"
+            git push origin HEAD:main
+            echo "README Featured block updated and pushed to main."
+          fi
+
+      # ---- STEP 3: publish pins.json to the shared `output` branch --------
+      # Same publish mechanism as the snake / summary-card / 3d-contrib
+      # workflows: crazy-max with keep_history:true CLONES the existing `output`
+      # branch and commits additively, so those co-existing assets are
+      # PRESERVED (a force-push, the default, would delete them).
+      - name: Stage pins.json for the output branch
+        if: env.skip_update != '1'
+        run: |
+          set -euo pipefail
+          mkdir -p staging
+          cp pins.json staging/pins.json
+
+      - name: Publish pins.json to the output branch
+        if: env.skip_update != '1'
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output
+          build_dir: staging
+          keep_history: true
+          allow_empty_commit: false
+          commit_message: "chore: refresh pins.json contract"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
