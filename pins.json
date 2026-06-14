@@ -6,5 +6,45 @@
     "url": "https://github.com/mguttmann/claude-team-hierarchy",
     "isFork": false,
     "stars": 0
+  },
+  {
+    "name": "code-audit-suite",
+    "description": "Local Docker-based code-quality & security tool chain as Claude Code skills — one orchestrator drives a codebase to zero (quality, security, licensing, and that it compiles/builds).",
+    "language": "Shell",
+    "url": "https://github.com/mguttmann/code-audit-suite",
+    "isFork": false,
+    "stars": 0
+  },
+  {
+    "name": "the-real-hetzner-mcp",
+    "description": "Local MCP server (stdio) exposing the entire Hetzner Cloud API as 201 typed tools — read and write",
+    "language": "TypeScript",
+    "url": "https://github.com/mguttmann/the-real-hetzner-mcp",
+    "isFork": false,
+    "stars": 0
+  },
+  {
+    "name": "the-real-snipeit-mcp",
+    "description": "MCP server for Snipe-IT REST API (100% coverage, hand-wrappers + codegen)",
+    "language": "TypeScript",
+    "url": "https://github.com/mguttmann/the-real-snipeit-mcp",
+    "isFork": false,
+    "stars": 0
+  },
+  {
+    "name": "the-real-bitwarden-mcp",
+    "description": "Local stdio MCP server for Bitwarden (Public API + Secrets Manager). 50+ admin tools for members, groups, collections, policies, licensing, projects, and secrets. For Claude Desktop / Claude Code.",
+    "language": "TypeScript",
+    "url": "https://github.com/mguttmann/the-real-bitwarden-mcp",
+    "isFork": false,
+    "stars": 0
+  },
+  {
+    "name": "the-real-unifi-mcp",
+    "description": "MCP server (stdio) for the UniFi Site Manager + Network APIs — 167 tools covering the documented API surface: 86 ergonomic hand-wrappers + 80 auto-generated + a raw-request escape hatch. Read + write, cloud-only, lazy ID discovery, optional write-confirm.",
+    "language": "TypeScript",
+    "url": "https://github.com/mguttmann/the-real-unifi-mcp",
+    "isFork": false,
+    "stars": 0
   }
 ]
