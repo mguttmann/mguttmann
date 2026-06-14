@@ -25,19 +25,13 @@
     reconcile-targets where the theme/branch segment must match the workflow.
     - snake animation   : https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake[-dark].svg
                           (verified against .github/workflows/snake.yml — `output` branch root, exact filenames)
-    - profile-summary-cards : https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-summary-card-output/<THEME>/<N-card>.svg
-                          (vn7n24fzkq/github-profile-summary-cards — verified output dir + filenames carry a numeric
-                          prefix: 0-profile-details / 1-repos-per-language / 2-most-commit-language / 3-stats /
-                          4-productive-time. <THEME> here = `github_dark` — reconciled with
-                          .github/workflows/profile-summary-cards.yml (which standardises on `github_dark` and
-                          pushes to the `output` branch via crazy-max, not the Action's default `main`).
-                          NOTE: only the language-NEUTRAL 4-productive-time card is embedded. The
-                          1-repos-per-language card is deliberately NOT embedded: the owner's real public
-                          code (3 public repos: HTML/JS/CSS site, this profile Markdown, a Shell repo) carries
-                          little TypeScript — his TS substance lives in an open-source contribution (opencode
-                          PR, see Featured). A repos-per-language card would therefore read as a misleading
-                          "other"/HTML-dominant language statement. The honest TS story is told via the
-                          Tech-stack badges + the opencode contribution card instead.)
+    - profile-summary-cards : the .github/workflows/profile-summary-cards.yml workflow still
+                          generates every summary card into the `output` branch (kept for reference and
+                          possible future use), but the README no longer embeds any of them. The
+                          repos-per-language / most-commit-language cards would read as a misleading
+                          "other"/HTML-dominant language statement about the owner's three small public
+                          repos, and the remaining cards added little. The honest TS story is told via the
+                          Tech-stack badges + the opencode contribution card instead.
     - profile-3d-contrib : https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-3d-contrib/profile-night-rainbow.svg
                           (yoshi389111/github-profile-3d-contrib v0.9.2 — verified output dir `profile-3d-contrib/`
                           and `profile-night-rainbow.svg` is a default output file; reconcile branch/theme with workflow.)
@@ -165,25 +159,18 @@ By night I build open-source MCP servers and agent tooling.
 ## :bar_chart: GitHub stats
 
 <!--
-  This block is deliberately a CURATED MIX of two reliability tiers — labelled so a
-  future maintainer knows which cards can flake and which cannot:
+  This block embeds a single, deliberately modest stats element: the streak card.
+  The flaky github-readme-stats aggregate cards and any language-breakdown cards are
+  intentionally NOT embedded — the owner's three small public repos would make an
+  auto-generated language statement misleading, and the real substance is the
+  open-source work below, not the numbers.
 
-    LIVE (best-effort)  : github-readme-stats Stats + Top-Languages + streak-stats.
-                          Rendered at view time on rate-limited public hosts
-                          (anuraghazra/github-readme-stats#4748). Custom Executive
-                          Dark Luxury colors (midnight #0E0E13 bg, copper #C8A06A
-                          titles/icons, off-white #ECE7DF text). Self-host with own
-                          PAT for guaranteed uptime.
-    COMMITTED (reliable): profile-summary-cards — only the language-NEUTRAL
-                          productive-time card (repos-per-language intentionally
-                          dropped; see note at its former location below).
-                          Generated daily by a GitHub Action into the `output` branch
-                          and served from the repo — no render-time host, refreshes on
-                          schedule. 404 until the first Action run (expected).
+    streak-stats (best-effort): streak-stats.demolab.com, rendered at view time on a
+                          rate-limited public host. Custom Executive Dark Luxury colors
+                          (midnight #0E0E13 bg, copper #C8A06A, off-white #ECE7DF text).
 
   DON'T 8 (INSPIRATION.md): the account is young, so public activity may be thin.
-  The stats/streak are therefore embedded at a modest size — NOT a giant hero. The
-  real substance is the open-source work below, not the numbers.
+  The streak is therefore embedded at a modest size — NOT a giant hero.
 -->
 
 <div align="center">
@@ -192,33 +179,6 @@ By night I build open-source MCP servers and agent tooling.
 <img
   src="https://streak-stats.demolab.com/?user=mguttmann&background=0E0E13&border=14141B&stroke=C8A06A&ring=C8A06A&fire=D9B583&currStreakNum=ECE7DF&sideNums=ECE7DF&currStreakLabel=C8A06A&sideLabels=ECE7DF&dates=8A8578&hide_border=true"
   alt="GitHub streak"
-/>
-
-<br/>
-
-<!--
-  COMMITTED (reliable) — profile-summary-cards. These refresh daily via a GitHub
-  Action and are served from the `output` branch, so they stay up even when the
-  public Vercel host above is rate-limited. EXPECTED 404 until the first Action
-  run after deploy (same as the snake).
-  THEME = github_dark — reconciled with .github/workflows/profile-summary-cards.yml,
-  which standardises on the dark, restrained `github_dark` theme (the Action generates
-  every theme into its own sub-folder, so the README just points at the chosen one).
-  Branch `output` is also set by that workflow. (reconcile-target: re-check the theme
-  segment if the workflow's chosen theme ever changes.)
-
-  Only the language-NEUTRAL 4-productive-time card is embedded. The
-  1-repos-per-language card was intentionally removed: the owner's three public repos
-  (HTML/JS/CSS site, this profile Markdown, a Shell repo) carry little/no TypeScript,
-  so an auto-generated repos-per-language donut would read as a misleading
-  HTML/"other"-dominant language statement about him. His real TypeScript work is an
-  open-source CONTRIBUTION (opencode PR — see Featured projects), which is surfaced
-  honestly via the Tech-stack badges and the opencode contribution card instead.
--->
-<img
-  height="200"
-  src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-summary-card-output/github_dark/4-productive-time.svg"
-  alt="Most productive time of day (auto-generated daily)"
 />
 
 </div>
@@ -350,13 +310,16 @@ review (proposed changes, not yet accepted). 18 PRs opened in total (1 open, 17 
 <div align="center">
 
 <!--
-  COMMITTED (reliable) — 3D isometric contribution calendar.
+  COMMITTED (reliable) — 3D isometric contribution calendar (language panel stripped).
   reconcile path with the 3d-contrib workflow — confirm branch `output` + filename.
-  `profile-night-rainbow.svg` is a verified default output of the Action.
+  `profile-night-rainbow.svg` is a verified default output of the Action; the
+  3d-contrib workflow post-processes it to strip the per-language legend/donut panel
+  (so no auto-generated HTML/"other" language statement is shown), keeping the 3D
+  contribution landscape intact.
 -->
 <img
   src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-3d-contrib/profile-night-rainbow.svg"
-  alt="3D contribution calendar (auto-generated daily)"
+  alt="3D contribution calendar (auto-generated daily, language panel stripped)"
   width="90%"
 />
 

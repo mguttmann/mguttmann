@@ -90,6 +90,126 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
 
+      # Strip the per-language legend/donut panel from the embedded SVG. The
+      # README embeds profile-night-rainbow.svg as the hero; the action always
+      # renders a small per-language panel (an "HTML"/"other" legend + a
+      # language donut) into it. The owner's three small public repos would make
+      # that auto-generated language statement misleading, so we cut JUST that
+      # one panel and keep the 3D contribution landscape (the contribution bars,
+      # the radar chart, the axes and the contribution counter) fully intact.
+      #
+      # The cut runs here (post-generation, pre-push) rather than once on a
+      # committed file, because the SVG is regenerated on every run. It uses the
+      # standard python3 already present on the runner (no lxml/xmlstarlet, no
+      # extra deps) and is token-free (operates on the freshly generated local
+      # file; no API/PAT/secret involved).
+      #
+      # The strip script identifies the panel by a STABLE content signature
+      # rather than a fixed transform coordinate (which shifts as the calendar
+      # week-count / data changes): the single outermost <g> group whose
+      # balanced content holds BOTH a fill-fg language label
+      # (<text ... font-size="21.6...px">HTML<) AND the donut marker
+      # (<title>HTML 2</title>). It removes that one group via correct <g>/</g>
+      # tag-balance matching. On 0 (or disjoint) candidates it exits non-zero so
+      # this step FAILS LOUDLY and we never push a mis-cut or un-cut SVG.
+      - name: Strip language panel from the embedded 3D SVG
+        run: |
+          cat > "${RUNNER_TEMP}/strip_lang_panel.py" <<'PYEOF'
+          #!/usr/bin/env python3
+          """Strip the language panel from a github-profile-3d-contrib SVG.
+
+          Removes exactly ONE outermost <g> group: the language legend + donut
+          panel, identified by a stable content signature (independent of the
+          translate(x,y) coordinates):
+            * a fill-fg language label  <text ... font-size="21.6...px">HTML<  AND
+            * the donut title           <title>HTML 2</title>
+          Group boundaries are found via correct <g>/</g> tag-balance matching.
+          Aborts non-zero on 0 or disjoint matches. Standard library only.
+
+          Usage: strip_lang_panel.py INPUT.svg [OUTPUT.svg]  (in-place if no OUTPUT)
+          """
+          import re
+          import sys
+
+          LANG_LABEL_RE = re.compile(
+              r'<text\b[^>]*\bfont-size="21\.6[0-9]*px"[^>]*>HTML<'
+          )
+          DONUT_TITLE = '<title>HTML 2</title>'
+          G_TAG_RE = re.compile(r'<g(?=[\s>])|</g>')
+
+
+          def find_group_bounds(svg, start):
+              depth = 0
+              for m in G_TAG_RE.finditer(svg, start):
+                  if m.group() == '</g>':
+                      depth -= 1
+                      if depth == 0:
+                          return start, m.end()
+                  else:
+                      depth += 1
+              return None
+
+
+          def find_lang_panel(svg):
+              matches = []
+              for m in re.finditer(r'<g(?=[\s>])', svg):
+                  bounds = find_group_bounds(svg, m.start())
+                  if bounds is None:
+                      continue
+                  s, e = bounds
+                  block = svg[s:e]
+                  if DONUT_TITLE in block and LANG_LABEL_RE.search(block):
+                      matches.append((s, e))
+              if not matches:
+                  raise ValueError("No language-panel group found (0 candidates).")
+              matches.sort(key=lambda se: se[1] - se[0])
+              smallest = matches[0]
+              s0, e0 = smallest
+              for s, e in matches[1:]:
+                  if not (s <= s0 and e >= e0):
+                      raise ValueError(
+                          "Ambiguous: found disjoint candidate groups %s and %s."
+                          % (smallest, (s, e))
+                      )
+              return smallest
+
+
+          def main(argv):
+              if len(argv) < 2:
+                  sys.stderr.write("usage: strip_lang_panel.py INPUT.svg [OUTPUT.svg]\n")
+                  return 2
+              inp = argv[1]
+              out = argv[2] if len(argv) > 2 else argv[1]
+              with open(inp, 'r', encoding='utf-8') as f:
+                  svg = f.read()
+              try:
+                  s, e = find_lang_panel(svg)
+              except ValueError as ex:
+                  sys.stderr.write("ERROR: %s\n" % ex)
+                  return 1
+              new_svg = svg[:s] + svg[e:]
+              with open(out, 'w', encoding='utf-8') as f:
+                  f.write(new_svg)
+              sys.stderr.write(
+                  "OK: removed language panel [%d:%d] = %d chars; wrote %s (%d -> %d bytes)\n"
+                  % (s, e, e - s, out, len(svg), len(new_svg))
+              )
+              return 0
+
+
+          if __name__ == '__main__':
+              sys.exit(main(sys.argv))
+          PYEOF
+          # Strip the panel from the embedded hero variant (in place).
+          python3 "${RUNNER_TEMP}/strip_lang_panel.py" profile-3d-contrib/profile-night-rainbow.svg
+          # Fail loudly if any language label survived the cut.
+          if grep -q '>HTML<\|>other<\|HTML 2' profile-3d-contrib/profile-night-rainbow.svg; then
+            echo "ERROR: language label still present after strip" >&2
+            exit 1
+          fi
+          # Confirm the result is still well-formed XML.
+          python3 -c "import xml.dom.minidom as m; m.parse('profile-3d-contrib/profile-night-rainbow.svg'); print('SVG well-formed')"
+
       # Move the generated folder under a staging dir so that crazy-max copies
       # the *contents* of `staging/` to the branch root, preserving the
       # `profile-3d-contrib/` prefix:
