@@ -30,7 +30,14 @@
                           prefix: 0-profile-details / 1-repos-per-language / 2-most-commit-language / 3-stats /
                           4-productive-time. <THEME> here = `github_dark` — reconciled with
                           .github/workflows/profile-summary-cards.yml (which standardises on `github_dark` and
-                          pushes to the `output` branch via crazy-max, not the Action's default `main`).)
+                          pushes to the `output` branch via crazy-max, not the Action's default `main`).
+                          NOTE: only the language-NEUTRAL 4-productive-time card is embedded. The
+                          1-repos-per-language card is deliberately NOT embedded: the owner's real public
+                          code (3 public repos: HTML/JS/CSS site, this profile Markdown, a Shell repo) carries
+                          little TypeScript — his TS substance lives in an open-source contribution (opencode
+                          PR, see Featured). A repos-per-language card would therefore read as a misleading
+                          "other"/HTML-dominant language statement. The honest TS story is told via the
+                          Tech-stack badges + the opencode contribution card instead.)
     - profile-3d-contrib : https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-3d-contrib/profile-night-rainbow.svg
                           (yoshi389111/github-profile-3d-contrib v0.9.2 — verified output dir `profile-3d-contrib/`
                           and `profile-night-rainbow.svg` is a default output file; reconcile branch/theme with workflow.)
@@ -167,7 +174,9 @@ By night I build open-source MCP servers and agent tooling.
                           Dark Luxury colors (midnight #0E0E13 bg, copper #C8A06A
                           titles/icons, off-white #ECE7DF text). Self-host with own
                           PAT for guaranteed uptime.
-    COMMITTED (reliable): profile-summary-cards (productive-time + repos-per-language).
+    COMMITTED (reliable): profile-summary-cards — only the language-NEUTRAL
+                          productive-time card (repos-per-language intentionally
+                          dropped; see note at its former location below).
                           Generated daily by a GitHub Action into the `output` branch
                           and served from the repo — no render-time host, refreshes on
                           schedule. 404 until the first Action run (expected).
@@ -197,16 +206,19 @@ By night I build open-source MCP servers and agent tooling.
   every theme into its own sub-folder, so the README just points at the chosen one).
   Branch `output` is also set by that workflow. (reconcile-target: re-check the theme
   segment if the workflow's chosen theme ever changes.)
+
+  Only the language-NEUTRAL 4-productive-time card is embedded. The
+  1-repos-per-language card was intentionally removed: the owner's three public repos
+  (HTML/JS/CSS site, this profile Markdown, a Shell repo) carry little/no TypeScript,
+  so an auto-generated repos-per-language donut would read as a misleading
+  HTML/"other"-dominant language statement about him. His real TypeScript work is an
+  open-source CONTRIBUTION (opencode PR — see Featured projects), which is surfaced
+  honestly via the Tech-stack badges and the opencode contribution card instead.
 -->
 <img
   height="200"
   src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-summary-card-output/github_dark/4-productive-time.svg"
   alt="Most productive time of day (auto-generated daily)"
-/>
-<img
-  height="200"
-  src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-summary-card-output/github_dark/1-repos-per-language.svg"
-  alt="Repositories per language (auto-generated daily)"
 />
 
 </div>
@@ -229,19 +241,69 @@ By night I build open-source MCP servers and agent tooling.
 ## :rocket: Featured projects
 
 <!--
-  Only PUBLIC, non-fork repos are featured. This pin-card pulls live metadata from
-  github-readme-stats. There is currently 1 public original repo, so it is shown
-  exactly once — as the pin card (live stars/language), with no duplicate text blurb.
-  claude-team-hierarchy confirmed public & non-fork via gh on 2026-06-14.
+  TWO clearly-distinct tiers, NOT shown as equals:
+
+  1) ORIGINAL project (his own repo) — claude-team-hierarchy. Exactly ONE public,
+     non-fork original repo, so it is shown exactly once as the pin card (live
+     stars/language), with no duplicate text blurb. Confirmed public & non-fork via
+     gh on 2026-06-14.
+
+  2) OPEN-SOURCE CONTRIBUTION — opencode. This is explicitly framed as a CONTRIBUTION
+     to a third-party project, NOT as his own original work. Verified via gh on
+     2026-06-14:
+       - mguttmann/opencode is a FORK of anomalyco/opencode (TypeScript). The fork
+         carries 0 of his own commits, so it is NOT presented as "his code".
+       - His real contribution is via PULL REQUESTS to upstream anomalyco/opencode:
+         18 PRs opened in total — 1 still open (#32167), 17 already closed, and none
+         landed. He is therefore an ACTIVE CONTRIBUTOR / proposer via PRs, not a
+         project maintainer, and does not own opencode.
+       - The headline number +54,942 / −3,861 is the SIZE OF THE OPEN PR #32167
+         (proposed changes), retrieved with
+         `gh pr view 32167 --repo anomalyco/opencode --json additions,deletions,state`.
+         It is described as a still-open PR with proposed changes.
+     HONESTY: the rendered copy below claims neither an integrated PR nor ownership;
+     opencode is labelled a fork plus an open PR, contribution only.
 -->
 
 <div align="center">
 
+<!-- (1) ORIGINAL — his own repo, shown exactly once as the live pin card. -->
 <a href="https://github.com/mguttmann/claude-team-hierarchy">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=claude-team-hierarchy&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="claude-team-hierarchy" />
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=claude-team-hierarchy&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="claude-team-hierarchy — original project" />
 </a>
 
 </div>
+
+<!--
+  (2) OPEN-SOURCE CONTRIBUTION — opencode. Deliberately a plain text/link/badge block
+  (NOT a github-readme-stats pin) so it cannot be mistaken for one of his own repos and
+  is not subject to the flaky live aggregate host. Theme-consistent copper #C8A06A /
+  surface #14141B badges. Every word is qualified: "contributing to", "open PR",
+  "proposed". The badge label says "open PR #32167" and stays in proposed-not-landed
+  language throughout.
+-->
+### :handshake: Open-source contributions
+
+<div align="center">
+
+<a href="https://github.com/anomalyco/opencode/pull/32167">
+  <img src="https://img.shields.io/badge/opencode-contributing%20via%20PRs-C8A06A?style=for-the-badge&logo=github&logoColor=14141B&labelColor=14141B" alt="opencode — contributing via pull requests" />
+</a>
+<a href="https://github.com/anomalyco/opencode/pull/32167">
+  <img src="https://img.shields.io/badge/open%20PR-%2332167%20·%20%2B54.9k%20lines%20proposed-C8A06A?style=for-the-badge&labelColor=14141B" alt="Open PR #32167 — +54.9k lines proposed" />
+</a>
+
+</div>
+
+<!-- LANG: prose below — translate for DE variant. Keep all qualifiers exact. -->
+**[opencode](https://github.com/anomalyco/opencode)** &nbsp;·&nbsp; <sub>open-source contribution (TypeScript)</sub>
+
+Active **open-source contributor** to [`anomalyco/opencode`](https://github.com/anomalyco/opencode)
+via pull requests — working from [my fork](https://github.com/mguttmann/opencode).
+Headlining the **[open PR #32167](https://github.com/anomalyco/opencode/pull/32167)**:
+*"nested sub-agent spawning (up to 5 levels) + multi-agent workflow orchestration"* —
+**~55k lines proposed** (`+54,942 / −3,861`), **currently open** and awaiting upstream
+review (proposed changes, not yet accepted). 18 PRs opened in total (1 open, 17 closed).
 
 <br/>
 
