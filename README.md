@@ -179,20 +179,6 @@ By night I build open-source MCP servers and agent tooling.
 
 <div align="center">
 
-<!-- LIVE (best-effort, rate-limited public host) -->
-<img
-  height="165"
-  src="https://github-readme-stats.vercel.app/api?username=mguttmann&show_icons=true&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true&include_all_commits=true&rank_icon=github"
-  alt="Manuel Guttmann's GitHub stats"
-/>
-<img
-  height="165"
-  src="https://github-readme-stats.vercel.app/api/top-langs/?username=mguttmann&layout=compact&bg_color=0E0E13&title_color=C8A06A&text_color=ECE7DF&hide_border=true&langs_count=8"
-  alt="Top languages"
-/>
-
-<br/>
-
 <!-- LIVE (best-effort). NOTE: streak-stats uses ?user= (not ?username=). -->
 <img
   src="https://streak-stats.demolab.com/?user=mguttmann&background=0E0E13&border=14141B&stroke=C8A06A&ring=C8A06A&fire=D9B583&currStreakNum=ECE7DF&sideNums=ECE7DF&currStreakLabel=C8A06A&sideLabels=ECE7DF&dates=8A8578&hide_border=true"
@@ -244,8 +230,9 @@ By night I build open-source MCP servers and agent tooling.
 
 <!--
   Only PUBLIC, non-fork repos are featured. This pin-card pulls live metadata from
-  github-readme-stats. claude-team-hierarchy confirmed public & non-fork via gh on 2026-06-14.
-  LANG: the one-line blurb under the card is language-dependent.
+  github-readme-stats. There is currently 1 public original repo, so it is shown
+  exactly once — as the pin card (live stars/language), with no duplicate text blurb.
+  claude-team-hierarchy confirmed public & non-fork via gh on 2026-06-14.
 -->
 
 <div align="center">
@@ -255,9 +242,6 @@ By night I build open-source MCP servers and agent tooling.
 </a>
 
 </div>
-
-<!-- LANG: project blurbs below are language-dependent. -->
-- **[claude-team-hierarchy](https://github.com/mguttmann/claude-team-hierarchy)** — a Claude Code plugin for nested, 5-level team-lead orchestration (opus-only dispatch, author ≠ reviewer, mandatory memory). *Shell.*
 
 <br/>
 
