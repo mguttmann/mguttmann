@@ -123,44 +123,6 @@ By night I build open-source MCP servers and agent tooling.
 
 <br/>
 
-<!-- =========================== TECH STACK =========================== -->
-## :hammer_and_wrench: Tech stack
-
-<!--
-  Badge groups. Logos verified live (curl, 2026-06-13). Microsoft Entra ID / Intune /
-  Defender have no dedicated SimpleIcons logo, so they use the generic Microsoft / shield
-  glyph on custom-icon-badges. Adjust the set to mirror your real day-to-day tooling.
-  LANG: group headings are language-dependent (Cloud & Identity, Security, ...).
--->
-
-<div align="center">
-
-**Cloud &amp; Identity** &nbsp;
-![Microsoft 365](https://custom-icon-badges.demolab.com/badge/Microsoft%20365-D83B01?style=flat-square&logo=microsoft-365&logoColor=white)
-![Microsoft Azure](https://custom-icon-badges.demolab.com/badge/Microsoft%20Azure-0078D4?style=flat-square&logo=azure&logoColor=white)
-![Microsoft Entra ID](https://custom-icon-badges.demolab.com/badge/Entra%20ID-0078D4?style=flat-square&logo=microsoft&logoColor=white)
-![Microsoft Intune](https://custom-icon-badges.demolab.com/badge/Intune-0078D4?style=flat-square&logo=microsoft&logoColor=white)
-<br/>
-**Security** &nbsp;
-![Microsoft Defender](https://custom-icon-badges.demolab.com/badge/Microsoft%20Defender-0078D4?style=flat-square&logo=shield&logoColor=white)
-![Identity Security](https://img.shields.io/badge/Identity%20%26%20Endpoint%20Security-14141B?style=flat-square&logo=linux&logoColor=C8A06A)
-<br/>
-**Languages &amp; Automation** &nbsp;
-![PowerShell](https://custom-icon-badges.demolab.com/badge/PowerShell-5391FE?style=flat-square&logo=powershell&logoColor=white)
-![Bash](https://img.shields.io/badge/Bash-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-<br/>
-**AI &amp; Tooling** &nbsp;
-![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![VS Code](https://custom-icon-badges.demolab.com/badge/VS%20Code-007ACC?style=flat-square&logo=vscode&logoColor=white)
-
-</div>
-
-<br/>
-
 <!-- =========================== FEATURED PROJECTS =========================== -->
 ## :rocket: Featured projects
 
