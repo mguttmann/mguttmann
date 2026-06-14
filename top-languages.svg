@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="386" viewBox="0 0 480 386" role="img" aria-labelledby="title desc" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="title">Most used languages across public and private repositories (forks excluded)</title>
+<desc id="desc">Aggregate share of programming languages by bytes across Manuel Guttmann's own GitHub repositories, forks excluded. No private repository names are shown.</desc>
+<rect x="0.5" y="0.5" width="479" height="385" rx="10" fill="#0E0E13" stroke="#C8A06A" stroke-opacity="0.35" stroke-width="1"/>
+<text x="24" y="40" fill="#C8A06A" font-size="18" font-weight="600">Most used languages</text>
+<text x="24" y="56" fill="#8A8578" font-size="10.5">across public &amp; private repos · forks excluded</text>
+<text x="24" y="86" fill="#ECE7DF" font-size="13">TypeScript</text>
+<rect x="142" y="74" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="74" width="131.47" height="12" rx="6" fill="#C8A06A"/>
+<text x="456" y="86" fill="#8A8578" font-size="12" text-anchor="end">51.0%</text>
+<text x="24" y="120" fill="#ECE7DF" font-size="13">JavaScript</text>
+<rect x="142" y="108" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="108" width="33.51" height="12" rx="6" fill="#D9B583"/>
+<text x="456" y="120" fill="#8A8578" font-size="12" text-anchor="end">13.0%</text>
+<text x="24" y="154" fill="#ECE7DF" font-size="13">HTML</text>
+<rect x="142" y="142" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="142" width="24.72" height="12" rx="6" fill="#B98E55"/>
+<text x="456" y="154" fill="#8A8578" font-size="12" text-anchor="end">9.6%</text>
+<text x="24" y="188" fill="#ECE7DF" font-size="13">C#</text>
+<rect x="142" y="176" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="176" width="24.11" height="12" rx="6" fill="#E3C79A"/>
+<text x="456" y="188" fill="#8A8578" font-size="12" text-anchor="end">9.3%</text>
+<text x="24" y="222" fill="#ECE7DF" font-size="13">Python</text>
+<rect x="142" y="210" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="210" width="22.43" height="12" rx="6" fill="#9E8B6E"/>
+<text x="456" y="222" fill="#8A8578" font-size="12" text-anchor="end">8.7%</text>
+<text x="24" y="256" fill="#ECE7DF" font-size="13">PowerShell</text>
+<rect x="142" y="244" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="244" width="10.79" height="12" rx="6" fill="#C2B59B"/>
+<text x="456" y="256" fill="#8A8578" font-size="12" text-anchor="end">4.2%</text>
+<text x="24" y="290" fill="#ECE7DF" font-size="13">Swift</text>
+<rect x="142" y="278" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="278" width="2.65" height="12" rx="6" fill="#7E7866"/>
+<text x="456" y="290" fill="#8A8578" font-size="12" text-anchor="end">1.0%</text>
+<text x="24" y="324" fill="#ECE7DF" font-size="13">CSS</text>
+<rect x="142" y="312" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="312" width="2.37" height="12" rx="6" fill="#A89274"/>
+<text x="456" y="324" fill="#8A8578" font-size="12" text-anchor="end">0.9%</text>
+<text x="24" y="358" fill="#ECE7DF" font-size="13">Other</text>
+<rect x="142" y="346" width="258" height="12" rx="6" fill="#14141B"/>
+<rect x="142" y="346" width="5.95" height="12" rx="6" fill="#8A8578"/>
+<text x="456" y="358" fill="#8A8578" font-size="12" text-anchor="end">2.3%</text>
+</svg>
