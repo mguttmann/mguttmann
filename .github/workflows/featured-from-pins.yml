@@ -167,7 +167,7 @@ jobs:
                   })
               return pins
 
-          def render_card(pin):
+          def render_cell(pin):
               card_url = PIN_CARD_BASE.format(repo=pin["name"])
               bits = []
               if pin["language"]:
@@ -176,21 +176,27 @@ jobs:
               if pin["isFork"]:
                   bits.append("fork")
               meta = " · ".join(bits)
-              return "\n".join([
-                  f'<a href="{pin["url"]}">',
-                  f'  <img src="{card_url}" alt="{pin["name"]} — pinned repository" />',
-                  "</a>",
-                  "",
-                  f"<sub>{meta}</sub>",
-              ])
+              return (
+                  f'<td align="center" valign="top" width="50%">'
+                  f'<a href="{pin["url"]}"><img src="{card_url}" '
+                  f'alt="{pin["name"]} — pinned repository" /></a><br />'
+                  f'<sub>{meta}</sub></td>'
+              )
 
           def render_block(pins):
               if not pins:
                   inner = ('<sub><em>No pinned repositories yet — '
                            "pin a repository on the profile to feature it here.</em></sub>")
-              else:
-                  inner = "\n\n".join(render_card(p) for p in pins)
-              return f'{START}\n\n<div align="center">\n\n{inner}\n\n</div>\n\n{END}'
+                  return f'{START}\n\n<div align="center">\n\n{inner}\n\n</div>\n\n{END}'
+              # 2 pin cards per row: a centred HTML table renders the cards
+              # side-by-side on GitHub. The github-readme-stats pin card has a
+              # fixed width, so 2-up is the clean maximum (3-up would clip).
+              rows = []
+              for i in range(0, len(pins), 2):
+                  cells = "".join(render_cell(p) for p in pins[i:i + 2])
+                  rows.append(f"  <tr>{cells}</tr>")
+              table = "<table>\n" + "\n".join(rows) + "\n</table>"
+              return f'{START}\n\n<div align="center">\n\n{table}\n\n</div>\n\n{END}'
 
           def replace_block(text, block):
               pat = re.compile(re.escape(START) + r".*?" + re.escape(END), re.DOTALL)
