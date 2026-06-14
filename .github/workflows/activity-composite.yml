@@ -1,0 +1,341 @@
+# Composite ACTIVITY graphic for the profile repo `mguttmann/mguttmann`.
+#
+# Produces a SINGLE composed SVG — the 3D isometric contribution landscape +
+# radar + contribution counter, with a VIBRANT language donut (official GitHub
+# Linguist colours) composed INTO its empty bottom-left region — and pushes it to
+# the shared `output` branch as:
+#
+#   https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-3d-contrib/activity-composite.svg
+#
+# The profile README embeds exactly this one file in the Activity section, so the
+# calendar and the language breakdown read as one polished visual instead of two
+# stacked images.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# SECURITY ARCHITECTURE — TOKEN ISOLATION (deliberate, least-privilege)
+# ─────────────────────────────────────────────────────────────────────────────
+# TWO jobs with a one-way artifact hand-off and a hard credential boundary:
+#
+#   JOB A  render-donut  (TOKEN job)
+#     * Declares `environment: stats`. Per the GitHub docs, environment secrets
+#       "are only available to workflow jobs that use the environment"
+#       (https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),
+#       so STATS_TOKEN is scoped to THIS job alone.
+#     * Runs ONLY our self-written renderer (.github/scripts/lang_card.py, Python
+#       stdlib, no third-party package). STATS_TOKEN is handed to that single
+#       step via step-level env and to NOTHING else — never to a third-party
+#       Action's `with: token:`.
+#     * Emits the donut as a finished SVG FRAGMENT and uploads it as an Actions
+#       artifact. The token never leaves this job; only the rendered SVG does.
+#     * Gated by `HAS_STATS_TOKEN` (the boolean `secrets.STATS_TOKEN != ''`, NOT
+#       the token value). If the secret is removed the render+upload are skipped.
+#
+#   JOB B  compose-3d  (TOKEN-FREE job)
+#     * Does NOT declare `environment: stats`, so STATS_TOKEN is NOT in scope
+#       here and is invisible to this job and to every Action it runs.
+#     * Runs the third-party 3D Action (yoshi389111/github-profile-3d-contrib)
+#       with ONLY the built-in GITHUB_TOKEN — sufficient for a public profile;
+#       the third-party Action never sees STATS_TOKEN.
+#     * Strips the 3D Action's misleading per-language panel (token-free, stdlib).
+#     * Downloads Job A's donut artifact (`needs: render-donut`) and MERGES it
+#       into the 3D SVG with a token-free, pure-SVG-manipulation script
+#       (.github/scripts/merge_donut_into_3d.py). The donut data arrives ONLY as
+#       a finished SVG — never as a token.
+#     * Pushes the composed SVG to `output` with crazy-max keep_history: true
+#       (clones + commits additively, so the snake / summary-card / pins.json
+#       assets on that branch are PRESERVED), using only GITHUB_TOKEN.
+#
+# Net effect: the token that can read private repos is used by EXACTLY one
+# self-written script in one environment-scoped job; the third-party 3D Action
+# and the merge run in a separate job that the secret never reaches. No token is
+# ever written into a file, an SVG, or a log.
+#
+# Action references pinned to currently maintained refs (verified June 2026):
+#   - actions/checkout@v4
+#   - actions/setup-python@v5
+#   - actions/upload-artifact@v4 / actions/download-artifact@v4
+#   - yoshi389111/github-profile-3d-contrib@v0.9.2
+#   - crazy-max/ghaction-github-pages@v5
+name: Generate Composite Activity Graphic
+
+on:
+  # Refresh once a day. A single daily compose covers both the calendar and the
+  # language breakdown; keeps Actions-minute usage low.
+  schedule:
+    - cron: "30 5 * * *"
+
+  # Allow manual runs from the Actions tab (used for the first run / debugging).
+  workflow_dispatch:
+
+  # Regenerate whenever the default branch is updated.
+  push:
+    branches:
+      - main
+
+# Least-privilege: the only mutation is pushing the composed SVG to the `output`
+# branch, which requires write access to repo contents. Nothing else is granted.
+permissions:
+  contents: write
+
+# Serialize overlapping runs (scheduled + push) that would race to push the same
+# branch. Do NOT cancel in-progress runs, so a running compose finishes.
+concurrency:
+  group: activity-composite
+  cancel-in-progress: false
+
+jobs:
+  # ── JOB A ──────────────────────────────────────────────────────────────────
+  # TOKEN job: renders the vibrant language donut from real data and uploads it
+  # as an artifact. STATS_TOKEN is scoped here via `environment: stats`.
+  render-donut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # CRITICAL: declaring the environment is what scopes STATS_TOKEN to this job
+    # only. Per the GitHub docs, environment secrets are available solely to jobs
+    # that reference the environment, so the compose-3d job below (which does NOT
+    # declare it) cannot access STATS_TOKEN.
+    environment: stats
+
+    # Gating flag. The `secrets` context cannot be used in a step-level `if:`, so
+    # evaluate the presence of the secret ONCE into a boolean string (NOT the
+    # token value — only `true`/`false`). If the secret is removed, render +
+    # upload are skipped (clean no-op) and the donut-group artifact is absent;
+    # the compose job then skips the merge and keeps the last composed SVG.
+    env:
+      HAS_STATS_TOKEN: ${{ secrets.STATS_TOKEN != '' }}
+
+    outputs:
+      donut_rendered: ${{ steps.render.outputs.rendered }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Render the donut GROUP fragment into dist/donut-group.svg with the
+      # self-written renderer. STATS_TOKEN is supplied ONLY to THIS step; it is
+      # never passed to any third-party Action and never logged. `set +x` keeps
+      # the shell from echoing commands. Gated on the secret being present.
+      - name: Render language donut fragment
+        id: render
+        if: ${{ env.HAS_STATS_TOKEN == 'true' }}
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
+          # Write ONLY the group fragment consumed by the merge (the standalone
+          # donut/bar variants are not needed for the composite pipeline).
+          LANGDONUT_GROUP_OUTPUT: dist/donut-group.svg
+        run: |
+          set +x
+          python3 .github/scripts/lang_card.py
+          # Defence-in-depth: refuse to proceed if a token-shaped string somehow
+          # ended up in the rendered SVG (it never should — the script emits
+          # aggregate stats only). Token VALUES are never echoed here.
+          if grep -qE 'gh[pousr]_[A-Za-z0-9]|github_pat_' dist/donut-group.svg; then
+            echo "ERROR: token-shaped string found in rendered donut — aborting" >&2
+            exit 1
+          fi
+          echo "rendered=true" >> "$GITHUB_OUTPUT"
+
+      # Upload the finished donut SVG as an artifact for the compose job. ONLY
+      # the rendered SVG crosses the job boundary — never the token.
+      - name: Upload donut fragment artifact
+        if: ${{ env.HAS_STATS_TOKEN == 'true' && steps.render.outputs.rendered == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: language-donut
+          path: dist/donut-group.svg
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── JOB B ──────────────────────────────────────────────────────────────────
+  # TOKEN-FREE job: generates the 3D SVG (third-party Action, GITHUB_TOKEN only),
+  # strips the misleading language panel, downloads Job A's donut artifact, merges
+  # it into the 3D SVG, and pushes the composed result. This job deliberately
+  # does NOT declare `environment: stats`, so STATS_TOKEN is NOT in scope here.
+  compose-3d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: render-donut
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Generate the 3D calendar SVGs into ./profile-3d-contrib/. No SETTING_JSON
+      # => the default files are produced; we compose into profile-night-rainbow.
+      # The third-party Action gets ONLY the built-in GITHUB_TOKEN (sufficient for
+      # a public profile); it never sees STATS_TOKEN (out of scope in this job).
+      - name: Generate 3D contribution calendar
+        uses: yoshi389111/github-profile-3d-contrib@v0.9.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: ${{ github.repository_owner }}
+
+      # Strip the per-language legend/donut panel the 3D Action bakes in. Stable
+      # content-signature match (see the script for details). Token-free, stdlib
+      # only. Fails loud on 0/ambiguous matches so we never push a mis-cut SVG.
+      - name: Strip language panel from the embedded 3D SVG
+        run: |
+          set +x
+          cat > "${RUNNER_TEMP}/strip_lang_panel.py" <<'PYEOF'
+          #!/usr/bin/env python3
+          """Strip the language panel from a github-profile-3d-contrib SVG.
+
+          Removes exactly ONE outermost <g> group: the language legend + donut
+          panel, identified by a stable content signature (independent of the
+          translate(x,y) coordinates):
+            * a fill-fg language label  <text ... font-size="21.6...px">HTML<  AND
+            * the donut title           <title>HTML 2</title>
+          Group boundaries are found via correct <g>/</g> tag-balance matching.
+          Aborts non-zero on 0 or disjoint matches. Standard library only.
+
+          Usage: strip_lang_panel.py INPUT.svg [OUTPUT.svg]  (in-place if no OUTPUT)
+          """
+          import re
+          import sys
+
+          LANG_LABEL_RE = re.compile(
+              r'<text\b[^>]*\bfont-size="21\.6[0-9]*px"[^>]*>HTML<'
+          )
+          DONUT_TITLE = '<title>HTML 2</title>'
+          G_TAG_RE = re.compile(r'<g(?=[\s>])|</g>')
+
+
+          def find_group_bounds(svg, start):
+              depth = 0
+              for m in G_TAG_RE.finditer(svg, start):
+                  if m.group() == '</g>':
+                      depth -= 1
+                      if depth == 0:
+                          return start, m.end()
+                  else:
+                      depth += 1
+              return None
+
+
+          def find_lang_panel(svg):
+              matches = []
+              for m in re.finditer(r'<g(?=[\s>])', svg):
+                  bounds = find_group_bounds(svg, m.start())
+                  if bounds is None:
+                      continue
+                  s, e = bounds
+                  block = svg[s:e]
+                  if DONUT_TITLE in block and LANG_LABEL_RE.search(block):
+                      matches.append((s, e))
+              if not matches:
+                  raise ValueError("No language-panel group found (0 candidates).")
+              matches.sort(key=lambda se: se[1] - se[0])
+              smallest = matches[0]
+              s0, e0 = smallest
+              for s, e in matches[1:]:
+                  if not (s <= s0 and e >= e0):
+                      raise ValueError(
+                          "Ambiguous: found disjoint candidate groups %s and %s."
+                          % (smallest, (s, e))
+                      )
+              return smallest
+
+
+          def main(argv):
+              if len(argv) < 2:
+                  sys.stderr.write("usage: strip_lang_panel.py INPUT.svg [OUTPUT.svg]\n")
+                  return 2
+              inp = argv[1]
+              out = argv[2] if len(argv) > 2 else argv[1]
+              with open(inp, 'r', encoding='utf-8') as f:
+                  svg = f.read()
+              try:
+                  s, e = find_lang_panel(svg)
+              except ValueError as ex:
+                  sys.stderr.write("ERROR: %s\n" % ex)
+                  return 1
+              new_svg = svg[:s] + svg[e:]
+              with open(out, 'w', encoding='utf-8') as f:
+                  f.write(new_svg)
+              sys.stderr.write(
+                  "OK: removed language panel [%d:%d] = %d chars; wrote %s (%d -> %d bytes)\n"
+                  % (s, e, e - s, out, len(svg), len(new_svg))
+              )
+              return 0
+
+
+          if __name__ == '__main__':
+              sys.exit(main(sys.argv))
+          PYEOF
+          python3 "${RUNNER_TEMP}/strip_lang_panel.py" profile-3d-contrib/profile-night-rainbow.svg
+          # Fail loudly if any language label survived the cut.
+          if grep -q '>HTML<\|>other<\|HTML 2' profile-3d-contrib/profile-night-rainbow.svg; then
+            echo "ERROR: language label still present after strip" >&2
+            exit 1
+          fi
+          # Confirm the stripped result is still well-formed XML.
+          python3 -c "import xml.dom.minidom as m; m.parse('profile-3d-contrib/profile-night-rainbow.svg'); print('stripped 3D SVG well-formed')"
+
+      # Download Job A's donut artifact. `needs: render-donut` guarantees Job A
+      # finished first; the donut data arrives ONLY as this finished SVG.
+      - name: Download donut fragment artifact
+        id: dl
+        if: ${{ needs.render-donut.outputs.donut_rendered == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: language-donut
+          path: donut
+
+      # Compose the donut into the empty bottom-left of the 3D SVG. Token-free,
+      # pure SVG manipulation, stdlib only; fails loud if the result is not
+      # well-formed. Runs only when the donut artifact is present.
+      - name: Compose donut into 3D SVG
+        if: ${{ needs.render-donut.outputs.donut_rendered == 'true' }}
+        run: |
+          set +x
+          test -s donut/donut-group.svg
+          python3 .github/scripts/merge_donut_into_3d.py \
+            profile-3d-contrib/profile-night-rainbow.svg \
+            donut/donut-group.svg \
+            profile-3d-contrib/activity-composite.svg
+          # Belt-and-braces: no token-shaped string in the composed SVG.
+          if grep -qE 'gh[pousr]_[A-Za-z0-9]|github_pat_' profile-3d-contrib/activity-composite.svg; then
+            echo "ERROR: token-shaped string found in composed SVG — aborting" >&2
+            exit 1
+          fi
+          echo "composite bytes:" && wc -c < profile-3d-contrib/activity-composite.svg
+
+      # If the donut could not be rendered (secret removed), still publish the
+      # stripped 3D SVG under the composite filename so the README image keeps
+      # working (it just shows the calendar without the donut until the secret
+      # returns). Clean degradation, never a 404 / broken embed.
+      - name: Fallback — composite without donut (secret absent)
+        if: ${{ needs.render-donut.outputs.donut_rendered != 'true' }}
+        run: |
+          set +x
+          cp profile-3d-contrib/profile-night-rainbow.svg \
+             profile-3d-contrib/activity-composite.svg
+          echo "NOTE: STATS_TOKEN absent — published 3D SVG without donut" >&2
+
+      # Stage the generated folder so crazy-max copies its CONTENTS to the branch
+      # root, preserving the profile-3d-contrib/ prefix on `output`.
+      - name: Stage generated SVGs
+        run: |
+          mkdir -p staging
+          mv profile-3d-contrib staging/
+
+      # Push the staged SVGs to `output`. keep_history: true makes crazy-max
+      # CLONE the existing branch and commit additively, so the snake /
+      # summary-card / pins.json assets there are PRESERVED. Uses only the
+      # built-in GITHUB_TOKEN (no STATS_TOKEN in this job).
+      - name: Push composed SVG to the output branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output
+          build_dir: staging
+          keep_history: true
+          allow_empty_commit: false
+          commit_message: "chore: refresh composite activity graphic (3D + language donut)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

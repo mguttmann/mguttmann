@@ -28,14 +28,26 @@
 # PRIVACY: the SVGs and the README never expose private repository NAMES or URLs.
 # Only the AGGREGATE language byte distribution is rendered.
 #
-# Output: TWO SVGs from the SAME aggregated data, written into dist/ so the
-# workflow's existing push step commits both:
-#   - dist/top-languages.svg        — horizontal bar card  (LANGCARD_OUTPUT)
-#   - dist/top-languages-donut.svg  — donut ring + legend  (LANGDONUT_OUTPUT)
-# The README embeds only the donut (in the Activity section); the bar card is
-# kept generated for continuity but is no longer embedded. Deterministic:
-# languages are sorted by bytes descending, then by name, so identical data
-# yields byte-identical files (no pseudo-diff churn on the daily schedule).
+# Output: THREE artefacts from the SAME aggregated data:
+#   - dist/top-languages.svg          — horizontal bar card  (LANGCARD_OUTPUT)
+#   - dist/top-languages-donut.svg    — standalone donut + legend  (LANGDONUT_OUTPUT)
+#   - dist/donut-group.svg            — donut as a bare, self-contained <svg>
+#                                       FRAGMENT (one <g> root) for COMPOSITION
+#                                       into the 3D contribution graphic by the
+#                                       token-free merge step (LANGDONUT_GROUP_OUTPUT)
+# The standalone donut and bar card are written only when their output paths are
+# explicitly requested (kept for continuity / debugging). The PRIMARY artefact
+# consumed downstream is the donut GROUP fragment, which is merged into the 3D
+# SVG so the calendar + language breakdown render as a SINGLE visual.
+#
+# VIBRANT, SEMANTICALLY-CORRECT COLOURS: each segment is coloured with the
+# OFFICIAL GitHub Linguist colour for that language (e.g. TypeScript #3178c6,
+# JavaScript #f1e05a). Unknown languages and the bucketed "Other" slice use a
+# neutral grey. Verified against github-linguist/linguist lib/linguist/languages.yml.
+#
+# Deterministic: languages are sorted by bytes descending, then by name, so
+# identical data yields byte-identical files (no pseudo-diff churn on the daily
+# schedule); no timestamps or random ids are emitted.
 # ---------------------------------------------------------------------------
 
 from __future__ import annotations
@@ -57,6 +69,12 @@ OUTPUT_PATH = os.environ.get("LANGCARD_OUTPUT", "dist/top-languages.svg")
 # Donut card output (rendered from the SAME aggregated data as the bar card).
 DONUT_OUTPUT_PATH = os.environ.get(
     "LANGDONUT_OUTPUT", "dist/top-languages-donut.svg"
+)
+# Donut GROUP fragment output — a bare, self-contained <svg> (single root) that
+# the token-free merge step composes INTO the 3D contribution graphic. This is
+# the PRIMARY artefact of the composite pipeline and is ALWAYS written.
+GROUP_OUTPUT_PATH = os.environ.get(
+    "LANGDONUT_GROUP_OUTPUT", "dist/donut-group.svg"
 )
 # Cap pagination defensively (100 repos/page * 10 pages = 1000 repos).
 MAX_PAGES = 10
@@ -83,6 +101,82 @@ BAR_COLORS = [
     "#A89274",  # bronze
 ]
 OTHER_COLOR = MUTED
+
+# ---- Official GitHub Linguist language colours -----------------------------
+# Vibrant, semantically-correct per-language colours. Each value is the exact
+# `color:` field from github-linguist/linguist lib/linguist/languages.yml
+# (verified June 2026). Used by the DONUT renderers so each segment carries the
+# language's official GitHub colour instead of a monochrome palette. Languages
+# not present here (and the bucketed "Other" slice) fall back to OTHER_COLOR
+# (neutral grey). Keys are matched case-insensitively against the language name
+# GitHub reports.
+GITHUB_LANG_COLORS: Dict[str, str] = {
+    "typescript": "#3178c6",
+    "javascript": "#f1e05a",
+    "python": "#3572A5",
+    "c#": "#178600",
+    "html": "#e34c26",
+    "powershell": "#012456",
+    "swift": "#F05138",
+    "css": "#663399",
+    "shell": "#89e051",
+    "dockerfile": "#384d54",
+    "c++": "#f34b7d",
+    "c": "#555555",
+    "tsql": "#e38c00",
+    "sql": "#e38c00",
+    "plpgsql": "#336790",
+    "bicep": "#519aba",
+    "vue": "#41b883",
+    "go": "#00ADD8",
+    "java": "#b07219",
+    "ruby": "#701516",
+    "kotlin": "#A97BFF",
+    "rust": "#dea584",
+    "scss": "#c6538c",
+    "less": "#1d365d",
+    "objective-c": "#438eff",
+    "ruby on rails": "#cc0000",
+    "dart": "#00B4AB",
+    "php": "#4F5D95",
+    "makefile": "#427819",
+    "batchfile": "#C1F12E",
+    "json": "#292929",
+    "yaml": "#cb171e",
+    "markdown": "#083fa1",
+}
+
+# Languages whose official colour is very dark (low luminance). On the midnight
+# card / 3D background these read as almost-black blobs, so the donut renderers
+# draw a thin lighter stroke around such segments to keep them legible. Values
+# are the lighter stroke colour to use for that language's segment edge.
+DARK_SEGMENT_STROKE: Dict[str, str] = {
+    "powershell": "#3b6ea5",   # #012456 is near-black -> lighter navy edge
+    "less": "#5577aa",          # #1d365d is dark -> lighter blue edge
+    "json": "#888888",
+}
+
+
+def lang_color(name: str) -> str:
+    """Return the official GitHub Linguist colour for a language name.
+
+    Case-insensitive lookup; the bucketed ``Other`` slice and any unknown
+    language fall back to the neutral grey ``OTHER_COLOR``.
+    """
+    if name == "Other":
+        return OTHER_COLOR
+    return GITHUB_LANG_COLORS.get(name.strip().lower(), OTHER_COLOR)
+
+
+def lang_edge_stroke(name: str) -> str:
+    """Return a lighter edge-stroke colour for very dark segments, else "".
+
+    Empty string means "no special edge needed" (the renderer then uses its
+    normal thin separator only).
+    """
+    if name == "Other":
+        return ""
+    return DARK_SEGMENT_STROKE.get(name.strip().lower(), "")
 
 
 def _request(url: str, token: str) -> Tuple[object, Dict[str, str]]:
@@ -330,9 +424,10 @@ def render_donut_svg(rows: List[Tuple[str, int, float]]) -> str:
     # Coloured segments, laid end-to-end starting at 12 o'clock (clockwise).
     parts.append(f'<g transform="rotate(-90 {cx} {cy})">')
     cumulative = 0.0
-    for i, (name, _size, pct) in enumerate(rows):
+    for _i, (name, _size, pct) in enumerate(rows):
         seg_len = circumference * pct / 100.0
-        color = OTHER_COLOR if name == "Other" else BAR_COLORS[i % len(BAR_COLORS)]
+        # VIBRANT: official GitHub language colour per segment (grey for Other).
+        color = lang_color(name)
         # Visible arc = segment minus the separator gap, but never below a small
         # minimum so a tiny share still registers as a sliver.
         visible = max(1.0, seg_len - seg_gap)
@@ -372,7 +467,7 @@ def render_donut_svg(rows: List[Tuple[str, int, float]]) -> str:
     )
     for i, (name, _size, pct) in enumerate(rows):
         row_y = legend_top + i * legend_row_h
-        color = OTHER_COLOR if name == "Other" else BAR_COLORS[i % len(BAR_COLORS)]
+        color = lang_color(name)
         safe_name = escape(name)
         # Swatch.
         parts.append(
@@ -388,6 +483,144 @@ def render_donut_svg(rows: List[Tuple[str, int, float]]) -> str:
         parts.append(
             f'<text x="{width - pad}" y="{row_y + swatch - 1}" fill="{MUTED}" '
             f'font-size="12" text-anchor="end">{_fmt_num(pct)}%</text>'
+        )
+
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
+def render_donut_group(rows: List[Tuple[str, int, float]]) -> str:
+    """Render the donut + compact legend as a SELF-CONTAINED <svg> FRAGMENT.
+
+    Unlike :func:`render_donut_svg` (a full card with its own background panel),
+    this emits a transparent, single-root ``<svg>`` sized to its OWN local
+    coordinate box, intended to be MERGED into the 3D contribution graphic by the
+    token-free merge step. The merge wraps this fragment's children in a
+    ``<g transform="translate(x y) scale(s)">`` and places it in the empty
+    bottom-left region of the 3D SVG, so the donut and the calendar read as a
+    single composed visual.
+
+    Design choices for legibility ON the dark 3D background (#00000f / #0E0E13):
+      * NO opaque panel — only a faint rounded backdrop at low opacity so the
+        donut visually groups without hiding the 3D scene.
+      * Each segment uses its OFFICIAL GitHub language colour (vibrant).
+      * Very dark segments (e.g. PowerShell #012456) get a thin lighter edge
+        stroke so they do not vanish into the background.
+      * A heading, the dominant language in the ring centre, and a compact
+        legend (swatch + language + %) sit to the right of the ring.
+
+    The fragment's local coordinate box is ``LOCAL_W x LOCAL_H`` (declared on the
+    root ``<svg>`` viewBox); the merge scales/translates that whole box. Fully
+    deterministic for identical input (stable order, no timestamps/ids).
+    """
+    # Local coordinate box of the fragment. The merge scales this whole box into
+    # the free bottom-left region of the 3D SVG.
+    local_w = 360
+    # Height grows with the number of legend rows so nothing clips.
+    n = len(rows)
+    legend_block_h = 30 + n * 22 + 8
+    ring_block_h = 200
+    local_h = max(ring_block_h, legend_block_h)
+
+    # Ring geometry (left portion of the fragment).
+    cx = 96.0
+    cy = local_h / 2.0
+    radius = 64.0
+    ring_w = 24.0
+    circumference = 2.0 * math.pi * radius
+
+    parts: List[str] = []
+    # Root: a fragment <svg> with an explicit viewBox. role/aria kept minimal;
+    # the merged-into-3D context provides the outer title/desc.
+    parts.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {local_w} {int(local_h)}" '
+        f'width="{local_w}" height="{int(local_h)}" '
+        f'font-family="Ubuntu, Segoe UI, Helvetica, Arial, sans-serif">'
+    )
+    # Faint rounded backdrop (low opacity) so the donut groups visually without
+    # masking the 3D scene behind it.
+    parts.append(
+        f'<rect x="2" y="2" width="{local_w - 4}" height="{int(local_h) - 4}" '
+        f'rx="14" fill="{BG}" fill-opacity="0.55" '
+        f'stroke="{COPPER}" stroke-opacity="0.30" stroke-width="1"/>'
+    )
+
+    # Track ring (dark surface) drawn under the coloured segments so the small
+    # inter-segment gaps reveal a crisp separator line.
+    parts.append(
+        f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="none" '
+        f'stroke="{SURFACE}" stroke-width="{ring_w}"/>'
+    )
+
+    seg_gap = 2.0
+    parts.append(f'<g transform="rotate(-90 {cx} {cy})">')
+    cumulative = 0.0
+    for name, _size, pct in rows:
+        seg_len = circumference * pct / 100.0
+        color = lang_color(name)
+        edge = lang_edge_stroke(name)
+        visible = max(1.0, seg_len - seg_gap)
+        dash = f"{round(visible, 3)} {round(circumference - visible, 3)}"
+        offset = round(-cumulative, 3)
+        # Optional lighter edge for very dark segments: a slightly WIDER stroke
+        # of the lighter colour drawn first, then the true colour on top, so a
+        # thin lighter rim remains visible around the dark segment.
+        if edge:
+            parts.append(
+                f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="none" '
+                f'stroke="{edge}" stroke-width="{ring_w + 3}" '
+                f'stroke-dasharray="{dash}" stroke-dashoffset="{offset}"/>'
+            )
+        parts.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="none" '
+            f'stroke="{color}" stroke-width="{ring_w}" '
+            f'stroke-dasharray="{dash}" stroke-dashoffset="{offset}"/>'
+        )
+        cumulative += seg_len
+    parts.append("</g>")
+
+    # Centre label: dominant language + its share.
+    if rows:
+        top_name, _ts, top_pct = rows[0]
+        parts.append(
+            f'<text x="{cx}" y="{cy - 3}" fill="{OFFWHITE}" font-size="19" '
+            f'font-weight="700" text-anchor="middle">{_fmt_num(top_pct)}%</text>'
+        )
+        parts.append(
+            f'<text x="{cx}" y="{cy + 15}" fill="{COPPER}" font-size="11" '
+            f'font-weight="600" text-anchor="middle">{escape(top_name)}</text>'
+        )
+
+    # Heading + compact legend (right portion).
+    legend_x = 196.0
+    legend_top = 34.0
+    legend_row_h = 22.0
+    swatch = 11.0
+    parts.append(
+        f'<text x="{legend_x}" y="{legend_top - 12}" fill="{COPPER}" '
+        f'font-size="13" font-weight="600">Languages</text>'
+    )
+    for i, (name, _size, pct) in enumerate(rows):
+        row_y = legend_top + i * legend_row_h
+        color = lang_color(name)
+        edge = lang_edge_stroke(name)
+        safe_name = escape(name)
+        stroke_attr = (
+            f' stroke="{edge}" stroke-width="1"' if edge else ""
+        )
+        parts.append(
+            f'<rect x="{legend_x}" y="{row_y}" width="{swatch}" '
+            f'height="{swatch}" rx="2" fill="{color}"{stroke_attr}/>'
+        )
+        parts.append(
+            f'<text x="{legend_x + swatch + 8}" y="{row_y + swatch - 1}" '
+            f'fill="{OFFWHITE}" font-size="12">{safe_name}</text>'
+        )
+        parts.append(
+            f'<text x="{local_w - 14}" y="{row_y + swatch - 1}" fill="{OFFWHITE}" '
+            f'fill-opacity="0.78" font-size="12" '
+            f'text-anchor="end">{_fmt_num(pct)}%</text>'
         )
 
     parts.append("</svg>")
@@ -428,12 +661,20 @@ def main() -> int:
     for name, _size, pct in rows:
         print(f"  {name:<14} {pct:5.1f}%", file=sys.stderr)
 
-    # Render BOTH cards from the SAME rows: the bar card (kept for continuity)
-    # and the donut card (embedded in the README's Activity section).
-    bar_svg = render_svg(rows)
-    donut_svg = render_donut_svg(rows)
+    # Render artefacts from the SAME rows. The PRIMARY artefact consumed
+    # downstream is the donut GROUP fragment (merged into the 3D graphic). The
+    # bar card and the standalone donut card are written only when their output
+    # paths are explicitly configured (kept for continuity / debugging) — by
+    # default the composite pipeline asks for the group fragment alone.
+    group_svg = render_donut_group(rows)
 
-    for path, svg in ((OUTPUT_PATH, bar_svg), (DONUT_OUTPUT_PATH, donut_svg)):
+    outputs: List[Tuple[str, str]] = [(GROUP_OUTPUT_PATH, group_svg)]
+    if os.environ.get("LANGCARD_OUTPUT"):
+        outputs.append((OUTPUT_PATH, render_svg(rows)))
+    if os.environ.get("LANGDONUT_OUTPUT"):
+        outputs.append((DONUT_OUTPUT_PATH, render_donut_svg(rows)))
+
+    for path, svg in outputs:
         out_dir = os.path.dirname(path)
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
