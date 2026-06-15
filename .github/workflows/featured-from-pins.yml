@@ -243,12 +243,31 @@ jobs:
       # workflows: crazy-max with keep_history:true CLONES the existing `output`
       # branch and commits additively, so those co-existing assets are
       # PRESERVED (a force-push, the default, would delete them).
-      - name: Stage pins.json for the output branch
+      # Generate repos.json: ALL public repositories - the live "Repositories"
+      # contract the portfolio site reads (so its Repos tab always shows the
+      # current public repos, generated nightly). Public + non-archived only;
+      # the profile/site repos are excluded. Built-in GITHUB_TOKEN = public read.
+      - name: Generate repos.json (all public repos)
+        if: env.skip_update != '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api "users/${GITHUB_REPOSITORY_OWNER}/repos?per_page=100&sort=pushed&type=owner" --jq '
+            [ .[]
+              | select(.private == false and .archived == false)
+              | select(.name != "mguttmann" and .name != "mguttmann.github.io")
+              | { name, description, language, url: .html_url, isFork: .fork, stars: .stargazers_count } ]
+          ' > repos.json
+          echo "---- repos.json ----"; cat repos.json
+
+      - name: Stage pins.json + repos.json for the output branch
         if: env.skip_update != '1'
         run: |
           set -euo pipefail
           mkdir -p staging
           cp pins.json staging/pins.json
+          cp repos.json staging/repos.json
 
       - name: Publish pins.json to the output branch
         if: env.skip_update != '1'
@@ -258,6 +277,6 @@ jobs:
           build_dir: staging
           keep_history: true
           allow_empty_commit: false
-          commit_message: "chore: refresh pins.json contract"
+          commit_message: "chore: refresh pins.json + repos.json contracts"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
