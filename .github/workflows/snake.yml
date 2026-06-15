@@ -59,9 +59,15 @@ jobs:
         with:
           github_user_name: ${{ github.repository_owner }}
           # One file per line. The dark variant uses the github-dark palette.
+          # The BRONZE variant recolours the contribution cells into 5 copper
+          # intensity steps (empty -> bright) with a bright champagne snake, to
+          # match the Executive Dark Luxury theme. The portfolio site uses it as
+          # the animated hero background behind the name; the README keeps the
+          # standard dark snake.
           outputs: |
             dist/github-contribution-grid-snake.svg
             dist/github-contribution-grid-snake-dark.svg?palette=github-dark
+            dist/github-snake-bronze.svg?color_snake=#e6c98f&color_dots=#16161d,#43331f,#6e5430,#9c7a43,#cca066
 
       # Push the contents of `dist/` to the `output` branch. After this, files
       # are reachable at:
