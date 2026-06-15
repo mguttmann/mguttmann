@@ -54,13 +54,18 @@
   ============================================================================
 -->
 
-<!-- =========================== HEADER WAVE =========================== -->
-<!-- LANG: header text "Manuel Guttmann" is a proper name — keep in DE too -->
+<!-- =========================== HEADER BANNER =========================== -->
+<!-- LANG: "Manuel Guttmann" is a proper name — keep in DE too. This banner is a
+     SINGLE animated SVG built by snake.yml: the bronze contribution snake runs
+     as the backdrop with the wordmark + tagline composited ON TOP. Markdown
+     cannot overlay live text on an animated image, so it is baked into the SVG;
+     a solid midnight base makes it read on BOTH light and dark themes. The
+     portfolio site achieves the same with real CSS. 404s until snake.yml runs. -->
 <div align="center">
 
 <img
-  src="https://capsule-render.vercel.app/api?type=waving&color=0:0E0E13,100:C8A06A&height=200&section=header&text=Manuel%20Guttmann&fontColor=ECE7DF&fontSize=50&fontAlignY=38&animation=fadeIn&desc=Microsoft%20365%20%C2%B7%20Azure%20%C2%B7%20Security%20%C2%B7%20Automation&descSize=18&descAlignY=58&descColor=D9B583"
-  alt="Manuel Guttmann"
+  src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/header-hero.svg"
+  alt="Manuel Guttmann — Microsoft 365 · Azure · Security · Automation"
   width="100%"
 />
 
@@ -256,20 +261,6 @@ review (proposed changes, not yet accepted). 25 PRs opened in total (7 open, 18 
   alt="3D contribution calendar with language breakdown (auto-generated daily)"
   width="90%"
 />
-
-<br/>
-<br/>
-
-<!--
-  COMMITTED (reliable) — snake contribution animation. Verified against
-  .github/workflows/snake.yml: `output` branch root, exact filenames. Owned by the
-  Snake-Workflow specialist. EXPECTED 404 until the first Action run after deploy.
--->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake-dark.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake.svg" />
-  <img alt="GitHub contribution snake animation" src="https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake.svg" />
-</picture>
 
 <br/>
 <br/>

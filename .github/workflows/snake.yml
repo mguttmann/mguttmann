@@ -69,6 +69,40 @@ jobs:
             dist/github-contribution-grid-snake-dark.svg?palette=github-dark
             dist/github-snake-bronze.svg?color_snake=#e6c98f&color_dots=#16161d,#43331f,#6e5430,#9c7a43,#cca066
 
+      # Compose the hero banner: overlay the wordmark + tagline on top of the
+      # bronze snake, on a solid midnight base (so it reads on BOTH light and
+      # dark README themes). This single animated SVG delivers the "snake running
+      # behind the name" effect in the README - something markdown CSS cannot do
+      # as a live overlay. The portfolio site does the same with real CSS.
+      - name: Compose hero banner (snake + wordmark)
+        run: |
+          cat > "${RUNNER_TEMP}/hero.py" <<'PYEOF'
+          import re
+          svg = open("dist/github-snake-bronze.svg", encoding="utf-8").read()
+          NAME = "Manuel Guttmann"
+          TAG = "MICROSOFT 365 &#183; AZURE &#183; SECURITY &#183; AUTOMATION"
+          bg = '<rect x="-16" y="-32" width="880" height="192" fill="#0E0E13"/>'
+          svg = re.sub(r'(<svg[^>]*>)', r'\1' + bg, svg, count=1)
+          overlay = (
+              '<defs><radialGradient id="hsScrim" cx="50%" cy="44%" r="62%">'
+              '<stop offset="0%" stop-color="#0E0E13" stop-opacity="0.78"/>'
+              '<stop offset="58%" stop-color="#0E0E13" stop-opacity="0.34"/>'
+              '<stop offset="100%" stop-color="#0E0E13" stop-opacity="0"/>'
+              '</radialGradient></defs>'
+              '<rect x="-16" y="-32" width="880" height="192" fill="url(#hsScrim)"/>'
+              '<text x="424" y="55" text-anchor="middle" dominant-baseline="middle" '
+              'font-family="Fraunces,Georgia,\'Times New Roman\',serif" font-weight="600" '
+              'font-size="54" letter-spacing="-1" fill="#F3ECDF">' + NAME + '</text>'
+              '<text x="424" y="95" text-anchor="middle" dominant-baseline="middle" '
+              'font-family="\'JetBrains Mono\',ui-monospace,monospace" font-weight="600" '
+              'font-size="15" letter-spacing="3" fill="#C8A06A">' + TAG + '</text>'
+          )
+          open("dist/header-hero.svg", "w", encoding="utf-8").write(svg.replace("</svg>", overlay + "</svg>", 1))
+          print("header-hero.svg written")
+          PYEOF
+          python3 "${RUNNER_TEMP}/hero.py"
+          python3 -c "import xml.dom.minidom as m; m.parse('dist/header-hero.svg'); print('well-formed')"
+
       # Push the contents of `dist/` to the `output` branch. After this, files
       # are reachable at:
       #   https://raw.githubusercontent.com/<owner>/<repo>/output/<file>
