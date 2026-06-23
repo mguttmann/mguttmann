@@ -201,7 +201,7 @@ By night I build open-source MCP servers and agent tooling.
   <img src="https://img.shields.io/badge/opencode-contributing%20via%20PRs-C8A06A?style=for-the-badge&logo=github&logoColor=14141B&labelColor=14141B" alt="opencode — contributing via pull requests" />
 </a>
 <a href="https://github.com/anomalyco/opencode/pull/32396">
-  <img src="https://img.shields.io/badge/open%20PR-%2332396%20·%20%2B40.5k%20lines%20proposed-C8A06A?style=for-the-badge&labelColor=14141B" alt="Open PR #32396 — +40.5k lines proposed" />
+  <img src="https://img.shields.io/badge/open%20PR-%2332396%20·%20%2B42.8k%20lines%20proposed-C8A06A?style=for-the-badge&labelColor=14141B" alt="Open PR #32396 — +42.8k lines proposed" />
 </a>
 
 </div>
@@ -213,7 +213,7 @@ Active **open-source contributor** to [`anomalyco/opencode`](https://github.com/
 via pull requests — working from [my fork](https://github.com/mguttmann/opencode).
 Headlining the **[open PR #32396](https://github.com/anomalyco/opencode/pull/32396)**:
 *"workflows guide (6/6) — split from #29789"* —
-**~40.5k lines proposed** (`+40,458 / −4,468`), **currently open** and awaiting upstream
+**~42.8k lines proposed** (`+42,812 / −6,436`), **currently open** and awaiting upstream
 review (proposed changes, not yet accepted). 25 PRs opened in total (7 open, 18 closed).
 <!-- OPENCODE:END -->
 
