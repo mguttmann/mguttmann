@@ -213,7 +213,7 @@ Active **open-source contributor** to [`anomalyco/opencode`](https://github.com/
 via pull requests — working from [my fork](https://github.com/mguttmann/opencode).
 Headlining the **[open PR #32396](https://github.com/anomalyco/opencode/pull/32396)**:
 *"workflows guide (6/6) — split from #29789"* —
-**~42.8k lines proposed** (`+42,812 / −6,436`), **currently open** and awaiting upstream
+**~42.8k lines proposed** (`+42,815 / −6,446`), **currently open** and awaiting upstream
 review (proposed changes, not yet accepted). 25 PRs opened in total (7 open, 18 closed).
 <!-- OPENCODE:END -->
 
