@@ -33,9 +33,24 @@
 #   JOB B  compose-3d  (TOKEN-FREE job)
 #     * Does NOT declare `environment: stats`, so STATS_TOKEN is NOT in scope
 #       here and is invisible to this job and to every Action it runs.
+#     * Starts a self-written GraphQL split proxy
+#       (.github/scripts/graphql_split_proxy.py, Python stdlib, no third-party
+#       package) BEFORE the 3D Action. It exists because GitHub's GraphQL API
+#       answers the Action's one combined query for this user with
+#       RESOURCE_LIMITS_EXCEEDED / user: null, which the pinned Action v0.9.2
+#       does not handle (TypeError). The proxy splits that query into
+#       sub-queries that stay under the limit, reassembles the response in the
+#       exact shape the Action expects, and stubs the per-language data the
+#       strip step removes anyway. Security posture: binds to 127.0.0.1 ONLY;
+#       upstream is HARDCODED to https://api.github.com/graphql (never derived
+#       from the request — no SSRF); the Authorization header is forwarded to
+#       api.github.com and NOWHERE else, and headers/tokens are never logged.
+#       Fail-loud: upstream GraphQL errors are returned unchanged so the job
+#       turns red instead of silently degrading.
 #     * Runs the third-party 3D Action (yoshi389111/github-profile-3d-contrib)
 #       with ONLY the built-in GITHUB_TOKEN — sufficient for a public profile;
-#       the third-party Action never sees STATS_TOKEN.
+#       the third-party Action never sees STATS_TOKEN. Its GraphQL calls are
+#       routed through the local split proxy via GITHUB_ENDPOINT.
 #     * Strips the 3D Action's misleading per-language panel (token-free, stdlib).
 #     * Downloads Job A's donut artifact (`needs: render-donut`) and MERGES it
 #       into the 3D SVG with a token-free, pure-SVG-manipulation script
@@ -47,8 +62,9 @@
 #
 # Net effect: the token that can read private repos is used by EXACTLY one
 # self-written script in one environment-scoped job; the third-party 3D Action
-# and the merge run in a separate job that the secret never reaches. No token is
-# ever written into a file, an SVG, or a log.
+# and the merge run in a separate job that the secret never reaches. The split
+# proxy only ever handles the low-privilege built-in GITHUB_TOKEN, in transit
+# to api.github.com. No token is ever written into a file, an SVG, or a log.
 #
 # Action references pinned to currently maintained refs (verified June 2026):
 #   - actions/checkout@v4
@@ -157,6 +173,9 @@ jobs:
   # strips the misleading language panel, downloads Job A's donut artifact, merges
   # it into the 3D SVG, and pushes the composed result. This job deliberately
   # does NOT declare `environment: stats`, so STATS_TOKEN is NOT in scope here.
+  # A loopback-only GraphQL split proxy shields the pinned 3D Action from
+  # GitHub's per-user RESOURCE_LIMITS_EXCEEDED on its combined query (see
+  # .github/scripts/graphql_split_proxy.py).
   compose-3d:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -166,15 +185,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Start the loopback-only GraphQL split proxy BEFORE the 3D Action. GitHub's
+      # GraphQL API answers the Action's combined query for this user with
+      # RESOURCE_LIMITS_EXCEEDED (user: null) and Action v0.9.2 ignores the errors
+      # array and crashes. The proxy splits that one query into sub-queries that
+      # stay under the limit and stubs commitContributionsByRepository=[] (the
+      # language panel it feeds is stripped by the next-but-one step anyway).
+      # Security: binds to 127.0.0.1 only, upstream is HARDCODED to
+      # api.github.com/graphql (no SSRF), Authorization is forwarded only there
+      # and never logged. Background process; the runner reaps it at job end.
+      # Logs go to a file so a later if:failure() step can surface them.
+      - name: Start GraphQL split proxy
+        run: |
+          nohup python3 .github/scripts/graphql_split_proxy.py \
+            > "${RUNNER_TEMP}/graphql-split-proxy.log" 2>&1 &
+          # Fail loud if the proxy is not ready within 10 s.
+          for _ in $(seq 1 50); do
+            curl -fsS -o /dev/null http://127.0.0.1:8877/healthz && { echo "proxy ready"; exit 0; }
+            sleep 0.2
+          done
+          echo "ERROR: GraphQL split proxy did not become ready" >&2
+          cat "${RUNNER_TEMP}/graphql-split-proxy.log" >&2 || true
+          exit 1
+
       # Generate the 3D calendar SVGs into ./profile-3d-contrib/. No SETTING_JSON
       # => the default files are produced; we compose into profile-night-rainbow.
       # The third-party Action gets ONLY the built-in GITHUB_TOKEN (sufficient for
       # a public profile); it never sees STATS_TOKEN (out of scope in this job).
+      # Its GraphQL calls go through the local split proxy (GITHUB_ENDPOINT).
       - name: Generate 3D contribution calendar
         uses: yoshi389111/github-profile-3d-contrib@v0.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
+          # Route the Action's GraphQL calls through the local split proxy.
+          GITHUB_ENDPOINT: http://127.0.0.1:8877/graphql
+
+      # Surface the proxy's log when the job fails, so the failing sub-query and
+      # the upstream GraphQL error are visible without re-running. Token-free by
+      # construction: the proxy never writes headers to its log.
+      - name: Dump GraphQL split proxy log
+        if: failure()
+        run: cat "${RUNNER_TEMP}/graphql-split-proxy.log" || true
 
       # Strip the per-language legend/donut panel the 3D Action bakes in. Stable
       # content-signature match (see the script for details). Token-free, stdlib
