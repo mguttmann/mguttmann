@@ -58,6 +58,11 @@ UPSTREAM = "https://api.github.com/graphql"  # HARDCODED — never derived from 
 BIND_HOST = "127.0.0.1"  # loopback ONLY — never exposed
 PORT = int(os.environ.get("GRAPHQL_SPLIT_PROXY_PORT", "8877"))
 UPSTREAM_TIMEOUT = 30  # seconds per sub-query; fail loud on expiry
+# Backoff between retries of a TRANSIENT sub-query failure, in seconds. Four
+# attempts total. Exists because GitHub's GraphQL cost guard is load-dependent:
+# with no retry at all, one bad answer painted the whole day red (17.-21.07.2026,
+# 16 failed runs, no code change in between).
+RETRY_BACKOFF = (1.0, 4.0, 12.0)
 TOTAL_FIELDS = (
     "totalCommitContributions",
     "totalIssueContributions",
@@ -136,6 +141,59 @@ def post_upstream(body: bytes, auth: str | None) -> tuple[int, bytes]:
         return exc.code, exc.read()
 
 
+def is_retryable(status: int, parsed: dict | None) -> bool:
+    """Is this sub-response worth another attempt?
+
+    ALLOWLIST, never a denylist: only failures known to be transient are retried,
+    so a genuine error can never be hidden behind four silent attempts.
+
+    Retryable:
+      * HTTP 403/429 (primary + secondary rate limits) and any 5xx
+      * HTTP 200 carrying RESOURCE_LIMITS_EXCEEDED or RATE_LIMITED — GitHub's
+        cost guard is load-dependent, not a property of the query: the very same
+        split query succeeded on 2026-07-22 and failed on 2026-07-21 with
+        rateLimit.cost=1, i.e. already at the cost floor.
+    Not retryable (fail loud immediately): NOT_FOUND, FORBIDDEN, validation
+    errors, unparseable bodies, and any user=null without an errors array.
+    """
+    if status in (403, 429) or 500 <= status < 600:
+        return True
+    if status != 200 or not isinstance(parsed, dict):
+        return False
+    errors = parsed.get("errors")
+    if not isinstance(errors, list):
+        return False
+    return any(
+        isinstance(e, dict) and e.get("type") in ("RESOURCE_LIMITS_EXCEEDED", "RATE_LIMITED")
+        for e in errors
+    )
+
+
+def post_upstream_with_retry(name: str, body: bytes, auth: str | None) -> tuple[int, bytes, dict | None]:
+    """post_upstream plus exponential backoff for transient upstream failures.
+
+    Returns (status, raw, parsed) of the LAST attempt. Only the one failing
+    sub-query is repeated — the other six keep their already-valid results.
+    Worst case adds RETRY_BACKOFF seconds; the job runs ~40 s against a
+    10-minute timeout, so there is ample headroom.
+    """
+    attempts = len(RETRY_BACKOFF) + 1
+    for attempt in range(1, attempts + 1):
+        status, raw = post_upstream(body, auth)
+        try:
+            parsed = json.loads(raw)
+        except ValueError:
+            parsed = None
+        if attempt == attempts or not is_retryable(status, parsed):
+            return status, raw, parsed
+        delay = RETRY_BACKOFF[attempt - 1]
+        # Token-free: only the sub-query name, the status and the delay.
+        log("sub-query '%s' transient failure (HTTP %d) — retry %d/%d in %.0fs"
+            % (name, status, attempt, attempts - 1, delay))
+        time.sleep(delay)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 def subresponse_error(name: str, status: int, parsed: dict | None, raw: bytes) -> list | None:
     """Return the errors array to reply with if the sub-response is bad, else None.
 
@@ -171,12 +229,8 @@ def handle_split(payload: dict, auth: str | None) -> tuple[int, dict]:
     responses: dict[str, dict] = {}
     for name, subquery in build_subqueries(args):
         body = json.dumps({"query": subquery, "variables": variables}).encode("utf-8")
-        status, raw = post_upstream(body, auth)
+        status, raw, parsed = post_upstream_with_retry(name, body, auth)
         log("sub-query '%s' -> upstream HTTP %d" % (name, status))
-        try:
-            parsed = json.loads(raw)
-        except ValueError:
-            parsed = None
         errors = subresponse_error(name, status, parsed, raw)
         if errors is not None:
             # FAIL-LOUD: no `data` key, so the Action throws the GraphQL
@@ -196,8 +250,11 @@ def handle_split(payload: dict, auth: str | None) -> tuple[int, dict]:
 
 
 def handle_passthrough(raw_body: bytes, auth: str | None) -> tuple[int, bytes]:
-    # fetchNext and anything else: byte-verbatim in both directions.
-    return post_upstream(raw_body, auth)
+    # fetchNext and anything else: byte-verbatim in both directions, but with the
+    # same transient-failure retry — a paginating fetchNext hits the very same
+    # load-dependent guard.
+    status, raw, _parsed = post_upstream_with_retry("passthrough", raw_body, auth)
+    return status, raw
 
 
 class Handler(BaseHTTPRequestHandler):

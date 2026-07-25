@@ -137,15 +137,18 @@ jobs:
 
           # --- write the idempotent generator (mirrors the local dry-run) ---
           cat > gen_featured.py <<'PYEOF'
-          import argparse, json, re, sys
+          import argparse, html, json, re, sys
           START = "<!-- FEATURED:START -->"
           END = "<!-- FEATURED:END -->"
-          PIN_CARD_BASE = (
-              "https://github-readme-stats.vercel.app/api/pin/"
-              "?username=mguttmann&repo={repo}"
-              "&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A"
-              "&text_color=ECE7DF&hide_border=true"
-          )
+          # NO render-time image host here, deliberately. This block used to embed
+          # github-readme-stats.vercel.app pin cards; that public instance now
+          # answers HTTP 503 DEPLOYMENT_PAUSED, so the most important section of the
+          # profile rendered as four broken image links. Text is strictly better
+          # anyway: it carries the actual information (each repo's description,
+          # which the API already returns and which the old renderer threw away),
+          # it is searchable, linkable and screen-reader friendly, it costs zero
+          # bytes, it does not travel through camo, and it cannot break.
+          MAX_DESC = 160
 
           def normalize_pins(raw):
               nodes = (raw.get("data", {}).get("user", {})
@@ -167,30 +170,45 @@ jobs:
                   })
               return pins
 
+          def shorten(text, limit=MAX_DESC):
+              text = " ".join((text or "").split())
+              if len(text) <= limit:
+                  return text
+              cut = text[:limit].rsplit(" ", 1)[0]
+              return cut.rstrip(" ,.;:—-") + "…"
+
           def render_cell(pin):
-              card_url = PIN_CARD_BASE.format(repo=pin["name"])
+              # Everything interpolated below comes from the GitHub API and is
+              # escaped: descriptions legitimately contain & and quotes, and this
+              # string is committed into the public README as HTML.
               bits = []
               if pin["language"]:
-                  bits.append(pin["language"])
-              bits.append(f"{pin['stars']}★" if pin["stars"] else "0★")
+                  bits.append(html.escape(pin["language"]))
+              # Stars only when there ARE stars. Rendering "0★" four times over
+              # advertises the weakest possible number about otherwise good work.
+              if pin["stars"]:
+                  bits.append(f"{pin['stars']}★")
               if pin["isFork"]:
                   bits.append("fork")
               meta = " · ".join(bits)
-              return (
-                  f'<td align="center" valign="top" width="50%">'
-                  f'<a href="{pin["url"]}"><img src="{card_url}" '
-                  f'alt="{pin["name"]} — pinned repository" /></a><br />'
-                  f'<sub>{meta}</sub></td>'
-              )
+              name = html.escape(pin["name"])
+              url = html.escape(pin["url"], quote=True)
+              desc = html.escape(shorten(pin["description"]))
+              parts = [
+                  f'<a href="{url}"><strong>{name}</strong></a>',
+                  f'<sub>{meta}</sub>' if meta else "",
+                  f'<sub>{desc}</sub>' if desc else "",
+              ]
+              body = "<br />".join(p for p in parts if p)
+              return f'<td align="left" valign="top" width="50%">{body}</td>'
 
           def render_block(pins):
               if not pins:
                   inner = ('<sub><em>No pinned repositories yet — '
                            "pin a repository on the profile to feature it here.</em></sub>")
                   return f'{START}\n\n<div align="center">\n\n{inner}\n\n</div>\n\n{END}'
-              # 2 pin cards per row: a centred HTML table renders the cards
-              # side-by-side on GitHub. The github-readme-stats pin card has a
-              # fixed width, so 2-up is the clean maximum (3-up would clip).
+              # 2 cells per row. Text cells could take 3-up, but 2-up keeps the
+              # descriptions readable instead of squeezing them into narrow columns.
               rows = []
               for i in range(0, len(pins), 2):
                   cells = "".join(render_cell(p) for p in pins[i:i + 2])

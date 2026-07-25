@@ -10,7 +10,11 @@
     LIVE (rendered at view time — best-effort public hosts):
     - readme-typing-svg : https://readme-typing-svg.demolab.com
     - capsule-render    : https://capsule-render.vercel.app/api   (best-effort host; self-host for max uptime)
-    - github-readme-stats : https://github-readme-stats.vercel.app  (public Vercel instance is rate-limited / best-effort — see issue #4748; self-host with own PAT for reliability)
+    - github-readme-stats : NO LONGER USED. The public Vercel instance now answers
+                          HTTP 503 DEPLOYMENT_PAUSED, which turned the four Featured pin
+                          cards into broken image links on the live profile. The Featured
+                          block is committed TEXT since 2026-07-25 (repo name, language,
+                          real description) — no render-time host, nothing left to break.
     - komarev ghpvc     : https://komarev.com/ghpvc/         (author calls it a "proof of concept")
     - shields.io        : https://img.shields.io
     - custom-icon-badges: https://custom-icon-badges.demolab.com (DenverCoder1 — hosts Microsoft/Azure/Claude logos that shields.io/SimpleIcons removed)
@@ -33,13 +37,14 @@
                           calendar and the language breakdown render as a single visual in the Activity
                           section (no separate file embed, no LANGDONUT:START/END markers). Vibrant official
                           GitHub Linguist colours per language segment; no private repo names are exposed.
-    - profile-summary-cards : the .github/workflows/profile-summary-cards.yml workflow still
-                          generates every summary card into the `output` branch (kept for reference and
-                          possible future use), but the README no longer embeds any of them. Their
-                          repos-per-language / most-commit-language cards rely on the built-in token and
-                          would read as a misleading "other"/HTML-dominant statement about the public
-                          repos only; the honest, private-inclusive language story is now told by the
-                          self-rendered top-languages donut in the Activity section instead.
+    - profile-summary-cards : REMOVED. The workflow was deleted on 2026-06-14 (commit cd68514)
+                          because it kept losing the output-branch push race, and its
+                          repos-per-language / most-commit-language cards relied on the built-in
+                          token — which would have read as a misleading "other"/HTML-dominant
+                          statement about the public repos only. The honest, private-inclusive
+                          language story is told by the self-rendered top-languages donut in the
+                          Activity section instead. Its stale artefacts still sit on the `output`
+                          branch and are queued for cleanup; nothing embeds them.
     - profile-3d-contrib : https://raw.githubusercontent.com/mguttmann/mguttmann/output/profile-3d-contrib/activity-composite.svg
                           (yoshi389111/github-profile-3d-contrib v0.9.2 generates `profile-night-rainbow.svg`
                           in output dir `profile-3d-contrib/`; activity-composite.yml then strips its language
@@ -87,14 +92,21 @@
 </a>
 <!-- LANG: label "Profile Views" -> DE "Profilaufrufe" (use &label=Profilaufrufe) -->
 
+<!-- Portfolio badge FIRST among the outbound links: it is the one destination
+     that leaves this page for something of Manuel's own, and it is the page he
+     promotes on LinkedIn. Before 2026-07-25 the rendered README linked to it
+     nowhere at all. -->
+<a href="https://mguttmann.github.io/">
+  <img src="https://img.shields.io/badge/Portfolio-mguttmann.github.io-C8A06A?style=flat-square&logo=github&logoColor=14141B&labelColor=14141B" alt="Portfolio: mguttmann.github.io" />
+</a>
 <a href="https://www.linkedin.com/in/manuel-guttmann/">
   <img src="https://custom-icon-badges.demolab.com/badge/LinkedIn-C8A06A?style=flat-square&logo=linkedin-original&logoColor=white" alt="LinkedIn" />
 </a>
 <a href="mailto:manuelguttmann@icloud.com">
   <img src="https://img.shields.io/badge/Email-C8A06A?style=flat-square&logo=maildotru&logoColor=white" alt="Email" />
 </a>
-<a href="https://github.com/mguttmann">
-  <img src="https://img.shields.io/badge/GitHub-14141B?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+<a href="https://github.com/mguttmann?tab=repositories">
+  <img src="https://img.shields.io/badge/All%20repositories-14141B?style=flat-square&logo=github&logoColor=white" alt="All repositories" />
 </a>
 <!-- LANG: pronouns badge "he/him" stays identical in DE (he/him is used in DE professional profiles too). -->
 <img src="https://img.shields.io/badge/he%2Fhim-14141B?style=flat-square" alt="Pronouns: he/him" />
@@ -173,8 +185,8 @@ By night I build open-source MCP servers and agent tooling.
 <div align="center">
 
 <table>
-  <tr><td align="center" valign="top" width="50%"><a href="https://github.com/mguttmann/claude-team-hierarchy"><img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=claude-team-hierarchy&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="claude-team-hierarchy — pinned repository" /></a><br /><sub>Shell · 0★</sub></td><td align="center" valign="top" width="50%"><a href="https://github.com/mguttmann/code-audit-suite"><img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=code-audit-suite&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="code-audit-suite — pinned repository" /></a><br /><sub>Shell · 0★</sub></td></tr>
-  <tr><td align="center" valign="top" width="50%"><a href="https://github.com/mguttmann/the-real-hetzner-mcp"><img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-hetzner-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-hetzner-mcp — pinned repository" /></a><br /><sub>TypeScript · 0★</sub></td><td align="center" valign="top" width="50%"><a href="https://github.com/mguttmann/the-real-bitwarden-mcp"><img src="https://github-readme-stats.vercel.app/api/pin/?username=mguttmann&repo=the-real-bitwarden-mcp&bg_color=0E0E13&title_color=C8A06A&icon_color=C8A06A&text_color=ECE7DF&hide_border=true" alt="the-real-bitwarden-mcp — pinned repository" /></a><br /><sub>TypeScript · 0★</sub></td></tr>
+  <tr><td align="left" valign="top" width="50%"><a href="https://github.com/mguttmann/claude-team-hierarchy"><strong>claude-team-hierarchy</strong></a><br /><sub>Shell</sub><br /><sub>Claude Code plugin: nested 5-level team-lead orchestration (CEO delegates only, opus-only dispatch, author != reviewer, mandatory memory) — skill + subagents +…</sub></td><td align="left" valign="top" width="50%"><a href="https://github.com/mguttmann/code-audit-suite"><strong>code-audit-suite</strong></a><br /><sub>Shell</sub><br /><sub>Local Docker-based code-quality &amp; security tool chain as Claude Code skills — one orchestrator drives a codebase to zero (quality, security, licensing, and…</sub></td></tr>
+  <tr><td align="left" valign="top" width="50%"><a href="https://github.com/mguttmann/the-real-hetzner-mcp"><strong>the-real-hetzner-mcp</strong></a><br /><sub>TypeScript</sub><br /><sub>Local MCP server (stdio) exposing the entire Hetzner Cloud API as 201 typed tools — read and write</sub></td><td align="left" valign="top" width="50%"><a href="https://github.com/mguttmann/the-real-bitwarden-mcp"><strong>the-real-bitwarden-mcp</strong></a><br /><sub>TypeScript</sub><br /><sub>Local stdio MCP server for Bitwarden (Public API + Secrets Manager). 50+ admin tools for members, groups, collections, policies, licensing, projects, and…</sub></td></tr>
 </table>
 
 </div>
@@ -279,6 +291,15 @@ review (proposed changes, not yet accepted). 25 PRs opened in total (1 open, 24 
 ## :mailbox_with_mail: Reach me
 
 <!-- LANG: line labels (Email / GitHub / LinkedIn) keep, value mailto stays. -->
+<!--
+  The portfolio site is linked HERE and in the badge row, deliberately: until
+  2026-07-25 its URL appeared in this file only inside HTML comments, so the
+  rendered README had no path to it at all — while the site itself is what gets
+  promoted on LinkedIn. Same for "all repositories": four repos are pinned, the
+  other nine were unreachable from this page.
+-->
+- :globe_with_meridians: **Portfolio** — [mguttmann.github.io](https://mguttmann.github.io/)
+- :file_folder: **All repositories** — [github.com/mguttmann?tab=repositories](https://github.com/mguttmann?tab=repositories)
 - :email: **Email** — [manuelguttmann@icloud.com](mailto:manuelguttmann@icloud.com)
 - :octocat: **GitHub** — [@mguttmann](https://github.com/mguttmann)
 - :briefcase: **LinkedIn** — [@manuel-guttmann](https://www.linkedin.com/in/manuel-guttmann/)

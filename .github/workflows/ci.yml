@@ -1,0 +1,138 @@
+# Quality gate for the profile repo's own code.
+#
+# WHY: this repository carries real logic — a loopback GraphQL split proxy, an
+# SVG panel stripper, an SVG composer, a language aggregator — and a unit-test
+# suite for it. Until this workflow existed, that suite never ran anywhere: a
+# regression could only be discovered by a scheduled job failing in production,
+# on a public profile. The tests were decoration; now they are a gate.
+#
+# Deliberately hard from the first commit: a gate that reports but does not
+# block is not a gate. It runs only on changes to scripts and workflows, so it
+# never gets in the way of a content-only commit (the daily bot commits touch
+# README.md and never trip it).
+#
+# Least privilege: read-only token. This workflow publishes nothing.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Unit tests (stdlib only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # This job needs no credentials afterwards; do not leave a token in
+          # the checkout's git config for later steps to pick up.
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The scripts are standard-library only by design, so there is nothing to
+      # install — that property is itself worth asserting.
+      - name: Assert the scripts import without third-party packages
+        run: |
+          for f in .github/scripts/*.py; do
+            python3 -m py_compile "$f"
+          done
+          echo "All scripts compile against a bare stdlib interpreter."
+
+      - name: Run unit tests
+        run: |
+          cd .github/scripts/tests
+          python3 -m unittest discover -p 'test_*.py' -v
+
+  lint-workflows:
+    name: Lint workflows (actionlint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # actionlint also shellchecks every `run:` block, which matters here
+      # because several workflows embed non-trivial shell and Python heredocs.
+      #
+      # The installer is pinned to a TAG, not to `main`: piping a moving branch
+      # into bash would execute whatever that branch contains at run time, which
+      # is precisely the supply-chain shape this repo avoids elsewhere. The
+      # downloaded release archive is verified against the checksum GitHub
+      # publishes for that release before anything is executed.
+      - name: Run actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+        run: |
+          set -euo pipefail
+          arch="linux_amd64"
+          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          curl -fsSL -o actionlint.tgz "${base}/actionlint_${ACTIONLINT_VERSION}_${arch}.tar.gz"
+          curl -fsSL -o checksums.txt "${base}/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          # Fail if the archive does not match the published checksum.
+          grep "actionlint_${ACTIONLINT_VERSION}_${arch}.tar.gz" checksums.txt \
+            | sed "s#actionlint_${ACTIONLINT_VERSION}_${arch}.tar.gz#actionlint.tgz#" \
+            | sha256sum -c -
+          tar -xzf actionlint.tgz actionlint
+          ./actionlint -color -version
+          ./actionlint -color
+
+  doc-drift:
+    name: Docs match reality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The README used to state that a workflow file "still generates" cards
+      # months after that file had been deleted. Anyone who clicks "Raw" reads
+      # that. This check makes such drift fail instead of aging quietly.
+      - name: Every workflow file named in the README must exist
+        run: |
+          set -euo pipefail
+          missing=0
+          # Match referenced workflow and script paths anywhere in the README,
+          # including inside HTML comments — those are public too.
+          grep -oE '\.github/(workflows/[A-Za-z0-9._-]+\.ya?ml|scripts/[A-Za-z0-9._/-]+\.py)' README.md \
+            | sort -u > referenced.txt
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            if [ -e "$f" ]; then
+              echo "  ok      $f"
+            else
+              echo "  MISSING $f  (referenced in README.md but not in the repo)"
+              missing=$((missing + 1))
+            fi
+          done < referenced.txt
+          rm -f referenced.txt
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing file(s) referenced by README.md do not exist."
+            exit 1
+          fi
+          echo "No documentation drift."

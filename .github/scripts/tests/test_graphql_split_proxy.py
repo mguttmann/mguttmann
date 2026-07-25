@@ -126,6 +126,10 @@ class ProxyTest(unittest.TestCase):
         threading.Thread(target=cls.mock.serve_forever, daemon=True).start()
         cls._orig_upstream = proxy.UPSTREAM
         proxy.UPSTREAM = "http://127.0.0.1:%d/graphql" % cls.mock.server_address[1]
+        # Same NUMBER of attempts as production, without the real waits: the
+        # retry logic is under test, the sleep duration is not.
+        cls._orig_backoff = proxy.RETRY_BACKOFF
+        proxy.RETRY_BACKOFF = tuple(0.0 for _ in proxy.RETRY_BACKOFF)
 
         cls.proxy_srv = proxy.create_server(0)
         threading.Thread(target=cls.proxy_srv.serve_forever, daemon=True).start()
@@ -136,6 +140,7 @@ class ProxyTest(unittest.TestCase):
         cls.proxy_srv.shutdown()
         cls.mock.shutdown()
         proxy.UPSTREAM = cls._orig_upstream
+        proxy.RETRY_BACKOFF = cls._orig_backoff
         proxy.log = cls._orig_log
 
     def setUp(self):
@@ -251,8 +256,13 @@ class ProxyTest(unittest.TestCase):
         status, raw = self.post(body, auth=token)
         self.assertEqual(status, 403)
         self.assertEqual(raw, canned)
-        self.assertEqual(len(MockUpstreamHandler.requests), 1)
-        self.assertEqual(MockUpstreamHandler.requests[0][2], token)
+        # A 403 is retryable (GitHub uses it for secondary rate limits — this
+        # very body says "rate limit exceeded"), so the passthrough exhausts all
+        # attempts and only THEN relays status and bytes verbatim.
+        self.assertEqual(len(MockUpstreamHandler.requests), len(proxy.RETRY_BACKOFF) + 1)
+        # Auth must be forwarded on EVERY attempt, and logged on none.
+        for _q, _v, auth_seen, _r in MockUpstreamHandler.requests:
+            self.assertEqual(auth_seen, token)
         self.assertNotIn("TESTSECRET123", "\n".join(type(self).log_lines))
 
     # ── 5. error path: RESOURCE_LIMITS_EXCEEDED on a sub-query ──────────
@@ -273,10 +283,12 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertNotIn("data", data)
         self.assertEqual(data["errors"], [upstream_error])
-        # Sub-query order: calendar, repositories, then TOTAL_FIELDS in order;
-        # the failure is the 2nd total* field => exactly 4 upstream requests,
-        # then abort.
-        self.assertEqual(len(MockUpstreamHandler.requests), 4)
+        # Sub-query order: calendar, repositories, then TOTAL_FIELDS in order.
+        # The failure is on the 2nd total* field, i.e. the 4th sub-query — which
+        # is now retried until the attempts are exhausted before aborting:
+        # 3 successful sub-queries + (1 + len(RETRY_BACKOFF)) attempts.
+        self.assertEqual(len(MockUpstreamHandler.requests),
+                         3 + len(proxy.RETRY_BACKOFF) + 1)
 
     # ── 6. user:null without errors -> synthetic error ──────────────────
 
@@ -378,6 +390,125 @@ class ProxyTest(unittest.TestCase):
         self.assertNotIn("TESTSECRET123", joined)
         self.assertIn("sub-query 'totalIssueContributions' failed", joined)
         self.assertIn("Query has exceeded resource limits.", joined)
+
+    # ── 12. retry / backoff on transient upstream failures ───────────────
+
+    def test_transient_resource_limit_recovers_on_retry(self):
+        """The failure mode that painted 17.-21.07.2026 red must now self-heal.
+
+        One sub-query answers RESOURCE_LIMITS_EXCEEDED once, then succeeds. The
+        overall run has to come out GREEN with complete, real data — not a
+        partial render and not a red job.
+        """
+        state = {"failures": 0}
+
+        def responder(payload, raw_body):
+            query = payload.get("query", "")
+            if "contributionCalendar" in query and state["failures"] == 0:
+                state["failures"] += 1
+                return 200, json.dumps({"data": {"user": None}, "errors": [
+                    {"type": "RESOURCE_LIMITS_EXCEEDED",
+                     "message": "Query has exceeded resource limits."},
+                ]}).encode()
+            return default_responder(payload, raw_body)
+
+        MockUpstreamHandler.responder = staticmethod(responder)
+        status, data = self.post_graphql(FETCH_FIRST)
+        self.assertEqual(status, 200)
+        self.assertIn("data", data)
+        self.assertNotIn("errors", data)
+        coll = data["data"]["user"]["contributionsCollection"]
+        # Real data, not a stub or a placeholder.
+        self.assertEqual(coll["contributionCalendar"]["totalContributions"], 3957)
+        self.assertEqual(coll["totalCommitContributions"], 3957)
+        self.assertEqual(coll["commitContributionsByRepository"], [])
+        # 7 sub-queries + exactly ONE extra attempt for the one that flaked.
+        self.assertEqual(len(MockUpstreamHandler.requests), 8)
+        self.assertIn("retry 1/", "\n".join(type(self).log_lines))
+
+    def test_5xx_recovers_on_retry(self):
+        state = {"n": 0}
+
+        def responder(payload, raw_body):
+            query = payload.get("query", "")
+            if "repositories(first" in query and state["n"] == 0:
+                state["n"] += 1
+                return 502, b"<html>bad gateway</html>"
+            return default_responder(payload, raw_body)
+
+        MockUpstreamHandler.responder = staticmethod(responder)
+        status, data = self.post_graphql(FETCH_FIRST)
+        self.assertEqual(status, 200)
+        self.assertIn("data", data)
+        self.assertEqual(data["data"]["user"]["repositories"], REPOSITORIES_DATA)
+        self.assertEqual(len(MockUpstreamHandler.requests), 8)
+
+    def test_non_retryable_error_fails_immediately(self):
+        """A genuine error must NOT be hidden behind repeated attempts."""
+        def responder(payload, raw_body):
+            query = payload.get("query", "")
+            if "contributionCalendar" in query:
+                return 200, json.dumps({"data": {"user": None}, "errors": [
+                    {"type": "NOT_FOUND",
+                     "message": "Could not resolve to a User with the login of 'nope'."},
+                ]}).encode()
+            return default_responder(payload, raw_body)
+
+        MockUpstreamHandler.responder = staticmethod(responder)
+        status, data = self.post_graphql(FETCH_FIRST)
+        self.assertEqual(status, 200)
+        self.assertNotIn("data", data)
+        self.assertEqual(data["errors"][0]["type"], "NOT_FOUND")
+        # calendar is the FIRST sub-query and must be attempted exactly once.
+        self.assertEqual(len(MockUpstreamHandler.requests), 1)
+        self.assertNotIn("retry", "\n".join(type(self).log_lines))
+
+    def test_token_never_logged_across_retries(self):
+        """The token-hygiene invariant must survive the new retry loop.
+
+        The failure path is now walked up to four times per sub-query, and the
+        failure log prints the full upstream body — so this is exactly where a
+        leak would appear.
+        """
+        token = "bearer RETRYSECRET456"
+        MockUpstreamHandler.responder = staticmethod(
+            lambda p, r: (429, b'{"message":"You have exceeded a secondary rate limit."}'))
+        status, data = self.post_graphql(FETCH_FIRST, auth=token)
+        self.assertEqual(status, 200)
+        self.assertNotIn("data", data)
+        joined = "\n".join(type(self).log_lines)
+        self.assertNotIn("RETRYSECRET456", joined)
+        self.assertNotIn("bearer", joined.lower())
+        # Attempts were really exhausted, and the token went out on each one.
+        self.assertEqual(len(MockUpstreamHandler.requests), len(proxy.RETRY_BACKOFF) + 1)
+        for _q, _v, auth_seen, _r in MockUpstreamHandler.requests:
+            self.assertEqual(auth_seen, token)
+        # Still diagnosable.
+        self.assertIn("secondary rate limit", joined)
+
+    def test_is_retryable_classification(self):
+        """Allowlist semantics, asserted directly — no network involved."""
+        limits = {"errors": [{"type": "RESOURCE_LIMITS_EXCEEDED", "message": "x"}]}
+        rated = {"errors": [{"type": "RATE_LIMITED", "message": "x"}]}
+        notfound = {"errors": [{"type": "NOT_FOUND", "message": "x"}]}
+        forbidden = {"errors": [{"type": "FORBIDDEN", "message": "x"}]}
+        for status, parsed, expected in [
+            (429, None, True),
+            (403, None, True),
+            (500, None, True),
+            (503, None, True),
+            (200, limits, True),
+            (200, rated, True),
+            (200, notfound, False),
+            (200, forbidden, False),
+            (200, {"data": {"user": None}}, False),   # user=null, no errors
+            (200, None, False),                       # unparseable body
+            (200, {"data": {"user": {}}}, False),     # success
+            (404, None, False),
+            (422, None, False),
+        ]:
+            with self.subTest(status=status, parsed=parsed):
+                self.assertIs(proxy.is_retryable(status, parsed), expected)
 
 
 if __name__ == "__main__":
