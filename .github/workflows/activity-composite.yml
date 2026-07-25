@@ -66,10 +66,12 @@
 # proxy only ever handles the low-privilege built-in GITHUB_TOKEN, in transit
 # to api.github.com. No token is ever written into a file, an SVG, or a log.
 #
-# Action references pinned to currently maintained refs (verified June 2026):
-#   - actions/checkout@v4
-#   - actions/setup-python@v5
-#   - actions/upload-artifact@v4 / actions/download-artifact@v4
+# Action references pinned to currently maintained refs (verified 2026-07-25;
+#   the actions/* majors were raised together because Node 20 is removed from
+#   the runners on 2026-09-16 and the v4/v5 line stays on node20):
+#   - actions/checkout@v7
+#   - actions/setup-python@v7
+#   - actions/upload-artifact@v7 / actions/download-artifact@v8
 #   - yoshi389111/github-profile-3d-contrib@v0.9.2
 #   - crazy-max/ghaction-github-pages@v5
 name: Generate Composite Activity Graphic
@@ -126,10 +128,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -161,7 +163,7 @@ jobs:
       # the rendered SVG crosses the job boundary — never the token.
       - name: Upload donut fragment artifact
         if: ${{ env.HAS_STATS_TOKEN == 'true' && steps.render.outputs.rendered == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: language-donut
           path: dist/donut-group.svg
@@ -183,7 +185,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Start the loopback-only GraphQL split proxy BEFORE the 3D Action. GitHub's
       # GraphQL API answers the Action's combined query for this user with
@@ -341,7 +343,7 @@ jobs:
       - name: Download donut fragment artifact
         id: dl
         if: ${{ needs.render-donut.outputs.donut_rendered == 'true' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: language-donut
           path: donut

@@ -5,8 +5,9 @@
 #   1. reads the pinned repositories via the GitHub GraphQL API,
 #   2. regenerates the block between the load-bearing markers
 #        <!-- FEATURED:START -->  ...  <!-- FEATURED:END -->
-#      in README.md (one theme-consistent pin card per pinned repo, fork
-#      honestly labelled) and commits it back to `main` IDEMPOTENTLY, and
+#      in README.md (one committed TEXT cell per pinned repo: name, language and
+#      the repo's real description; fork honestly labelled; stars only when there
+#      are stars) and commits it back to `main` IDEMPOTENTLY, and
 #   3. writes a machine-readable `pins.json` contract and publishes it to the
 #      shared `output` branch (next to the snake / summary-card / 3d-contrib
 #      assets) at:
@@ -44,8 +45,10 @@
 #         (docs.github.com/en/actions/.../skipping-workflow-runs).
 #   A human editing README.md by hand (no `[skip ci]`) still re-syncs normally.
 #
-# Action references pinned to current, maintained refs (verified June 2026):
-#   - actions/checkout@v4
+# Action references pinned to current, maintained refs (verified 2026-07-25;
+#   the actions/* majors were raised together because Node 20 is removed from
+#   the runners on 2026-09-16 and the v4/v5 line stays on node20):
+#   - actions/checkout@v7
 #   - crazy-max/ghaction-github-pages@v5 (output-branch publish, keep_history)
 name: Sync Featured from Pins
 
@@ -85,7 +88,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # ---- STEP 1: read pinned repositories via GraphQL -------------------
       # Uses the built-in GITHUB_TOKEN (sufficient for PUBLIC pins, see header).
