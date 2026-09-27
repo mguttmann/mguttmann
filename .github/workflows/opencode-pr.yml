@@ -1,13 +1,24 @@
-name: Update opencode contribution
+name: Update open-source work section
 
-# Keeps the "Open-source contributions" block in the README in sync with the
-# LIVE pull requests on anomalyco/opencode (public data, built-in GITHUB_TOKEN).
-# Only the text between OPENCODE:START / OPENCODE:END is regenerated; commits
-# only when something actually changed. No `push` trigger -> no self-trigger loop.
+# Keeps the "Open-source work" section of the README in sync with PUBLIC upstream
+# data: the GitHub search API (issues + PRs opened in repositories the owner does
+# NOT own) and the unauthenticated api.npmjs.org download counters. Only the text
+# between STORY:START/END and FRESH:START/END is regenerated; it commits only when
+# something actually changed. No `push` trigger -> no self-trigger loop.
+#
+# The file name is deliberately unchanged: the run history of a workflow hangs on
+# its PATH, not on the `name:` field above (44 runs on
+# .github/workflows/opencode-pr.yml as of 2026-07-25), so renaming the file would
+# throw that history away for nothing.
+#
+# TOKEN: the built-in GITHUB_TOKEN, deliberately. It must NEVER be given
+# STATS_TOKEN: that token can see private organisation repositories, and the very
+# same search query would then return them (measured 2026-07-25: 863 private items
+# under a single owner). See the PRIVACY rubric in upstream_story.py.
 
 on:
   schedule:
-    - cron: "30 4 * * *"   # daily 04:30 UTC
+    - cron: "30 4 * * *"   # daily 04:30 UTC (scheduled runs actually start ~05:20-05:45 UTC)
   workflow_dispatch:
 
 permissions:
@@ -20,6 +31,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -27,21 +39,24 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          # Pinned to the version CI tests against: production runs what was tested.
+          python-version: "3.12"
 
-      - name: Regenerate opencode block from live PRs
+      - name: Regenerate the Open-source work section
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 .github/scripts/opencode_pr.py
+        run: python3 .github/scripts/upstream_story.py
 
       - name: Commit & push if changed
         run: |
-          if [ -n "$(git status --porcelain README.md)" ]; then
-            git config user.name  "Manuel Guttmann"
-            git config user.email "manuelguttmann@icloud.com"
-            git commit -am "chore: refresh opencode PR stats [skip ci]"
-            git push
-            echo "committed updated opencode block"
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- README.md; then
+            echo "README unchanged, nothing to commit (idempotent no-op)."
           else
-            echo "opencode block already up to date — nothing to commit"
+            git add README.md
+            git commit -m "chore: refresh open-source work section [skip ci]"
+            git push origin HEAD:main
+            echo "Open-source work section updated and pushed to main."
           fi
