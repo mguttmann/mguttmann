@@ -1,7 +1,7 @@
 [
   {
     "name": "claude-team-hierarchy",
-    "description": "Claude Code plugin: nested 5-level team-lead orchestration (CEO delegates only, opus-only dispatch, author != reviewer, mandatory memory) — skill + subagents + /team-start command + opus-enforcement hook.",
+    "description": "Claude Code plugin: nested 5-level team-lead orchestration (CEO delegates only, opus-only dispatch, author != reviewer, mandatory memory). Ships a skill, subagents, a /team-start command and an opus-enforcement hook.",
     "language": "Shell",
     "url": "https://github.com/mguttmann/claude-team-hierarchy",
     "isFork": false,
@@ -9,7 +9,7 @@
   },
   {
     "name": "code-audit-suite",
-    "description": "Local Docker-based code-quality & security tool chain as Claude Code skills — one orchestrator drives a codebase to zero (quality, security, licensing, and that it compiles/builds).",
+    "description": "Local Docker-based code-quality & security tool chain as Claude Code skills: one orchestrator drives a codebase to zero (quality, security, licensing, and that it compiles/builds).",
     "language": "Shell",
     "url": "https://github.com/mguttmann/code-audit-suite",
     "isFork": false,
@@ -17,7 +17,7 @@
   },
   {
     "name": "the-real-hetzner-mcp",
-    "description": "Local MCP server (stdio) exposing the entire Hetzner Cloud API as 201 typed tools — read and write",
+    "description": "Local MCP server (stdio) exposing the entire Hetzner Cloud API as 201 typed tools, read and write",
     "language": "TypeScript",
     "url": "https://github.com/mguttmann/the-real-hetzner-mcp",
     "isFork": false,
