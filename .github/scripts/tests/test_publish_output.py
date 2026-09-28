@@ -11,8 +11,8 @@
 #     the value our push expects, which is the local form of the production
 #     failure of run 36358655683 ("cannot lock ref ... but expected ...");
 #   * two clones that push alternately (the second one is behind).
-# Git runs with an empty global and no system config, so the host's git
-# settings cannot change the outcome.
+# Git runs with no system config and a global config that only forbids
+# guessing an identity, so the host's git settings cannot change the outcome.
 #
 # Run:  cd .github/scripts/tests && python3 -m unittest discover -p 'test_*.py'
 # ---------------------------------------------------------------------------
@@ -56,11 +56,16 @@ class GitFixture(unittest.TestCase):
         self.home.mkdir()
         self.runner_temp = self.tmp / "runner-temp"
         self.runner_temp.mkdir()
+        # The only global setting: never guess an identity from the host
+        # account. A GitHub runner has none to guess, so without this a
+        # missing identity would pass here and fail only in CI.
+        global_config = self.home / "gitconfig"
+        global_config.write_text("[user]\n\tuseConfigOnly = true\n")
         self.env = {
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
             "HOME": str(self.home),
             "GIT_CONFIG_NOSYSTEM": "1",
-            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_GLOBAL": str(global_config),
             "RUNNER_TEMP": str(self.runner_temp),
             "PUSH_RETRY_PAUSE": "0",
         }
@@ -296,7 +301,17 @@ class PushWithRetryTest(GitFixture):
 
     def two_clones(self):
         self.seed({"a.svg": "a1"})
-        return self.clone("clone-a"), self.clone("clone-b")
+        clones = self.clone("clone-a"), self.clone("clone-b")
+        self.two_clones_identity(*clones)
+        return clones
+
+    def two_clones_identity(self, *clones):
+        # Like the production callers (featured-from-pins, opencode-pr), which
+        # set user.name/user.email in the checkout before they commit; the
+        # rebase in a retry needs that identity too.
+        for clone in clones:
+            self.git("config", "user.name", "github-actions[bot]", cwd=clone)
+            self.git("config", "user.email", "bot@example.invalid", cwd=clone)
 
     def commit(self, clone, name, content):
         (clone / name).write_text(content)

@@ -69,7 +69,7 @@ while :; do
   git fetch --no-tags origin "refs/heads/${branch}"
   if ! git rebase FETCH_HEAD; then
     git rebase --abort || true
-    echo "::error::Rebase onto the new ${branch} failed: a concurrent change touched the same file. Nothing was pushed, nothing was overwritten."
+    echo "::error::Rebase onto the new ${branch} failed (see the git error above; usually a concurrent change to the same file). Nothing was pushed, nothing was overwritten."
     exit 1
   fi
   attempt=$((attempt + 1))
