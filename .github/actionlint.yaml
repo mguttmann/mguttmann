@@ -1,0 +1,10 @@
+# actionlint configuration.
+#
+# ubuntu-26.04 is a GitHub-hosted runner label (generally available since
+# September 2026), but actionlint 1.7.12, the version CI pins, does not know it
+# yet and would report it as an unknown label. Declaring it here keeps the lint
+# gate strict for every other label. Remove this entry once the pinned
+# actionlint knows the label.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

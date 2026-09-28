@@ -10,11 +10,11 @@
 # proxy sits on loopback between the Action and api.github.com and splits that
 # ONE oversized query into sub-queries that each stay under the limit:
 #   - 1x contributionCalendar alone (calendar + repositories combined turned
-#     out to be FLAKY upstream — each alone is deterministically OK)
+#     out to be FLAKY upstream; each alone is deterministically OK)
 #   - 1x repositories alone
 #   - 5x ONE total* contribution field each (two or more in one query FAIL)
 # It then reassembles the answers into the exact response shape the Action
-# expects (its ResponseType) and STUBS commitContributionsByRepository=[] —
+# expects (its ResponseType) and STUBS commitContributionsByRepository=[]:
 # that field fails upstream in EVERY variant, and the only thing the Action
 # derives from it is the per-language panel, which the very next workflow step
 # strips out of the SVG anyway (the real language donut comes from Job A).
@@ -25,7 +25,7 @@
 #   - The Authorization header is forwarded EXCLUSIVELY to UPSTREAM
 #     (api.github.com/graphql) and to nothing else.
 #   - Headers are NEVER logged. The log contains only method, path, query
-#     classification, sub-query name, upstream HTTP status and — on failure —
+#     classification, sub-query name, upstream HTTP status and (on failure)
 #     the upstream GraphQL error body (which never contains tokens).
 #
 # SSRF: UPSTREAM is HARDCODED below and never derived from the request or from
@@ -35,7 +35,7 @@
 # with {"errors":[...]} WITHOUT a `data` key. The Action then throws
 # Error(errors[0].message) instead of the meaningless TypeError, the job goes
 # red, and the real GraphQL message is visible in the log. No silent
-# degradation — every sub-query must succeed for a green run.
+# degradation: every sub-query must succeed for a green run.
 #
 # All other queries (the Action's fetchNext pagination query, etc.) are passed
 # through to UPSTREAM byte-verbatim in both directions.
@@ -54,8 +54,8 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-UPSTREAM = "https://api.github.com/graphql"  # HARDCODED — never derived from the request (no SSRF)
-BIND_HOST = "127.0.0.1"  # loopback ONLY — never exposed
+UPSTREAM = "https://api.github.com/graphql"  # HARDCODED, never derived from the request (no SSRF)
+BIND_HOST = "127.0.0.1"  # loopback ONLY, never exposed
 PORT = int(os.environ.get("GRAPHQL_SPLIT_PROXY_PORT", "8877"))
 UPSTREAM_TIMEOUT = 30  # seconds per sub-query; fail loud on expiry
 # Backoff between retries of a TRANSIENT sub-query failure, in seconds. Four
@@ -100,7 +100,7 @@ def log(msg: str) -> None:
 def is_fetch_first(query: str) -> bool:
     # Whitespace-independent detection of the Action's fetchFirst query; the
     # fetchNext pagination query contains neither substring. Verified against
-    # the pinned v0.9.2 sources — the pin guarantees the strings cannot drift.
+    # the pinned v0.9.2 sources; the pin guarantees the strings cannot drift.
     return "commitContributionsByRepository" in query and "contributionCalendar" in query
 
 
@@ -119,7 +119,7 @@ def build_subqueries(args: str) -> list[tuple[str, str]]:
         ("calendar", CALENDAR_SUBQUERY % args),
         ("repositories", REPOSITORIES_SUBQUERY),
     ]
-    # NEVER two total* fields in one query — that is exactly the pattern that
+    # NEVER two total* fields in one query: that is exactly the pattern that
     # trips RESOURCE_LIMITS_EXCEEDED for this user.
     for field in TOTAL_FIELDS:
         subqueries.append((field, TOTAL_SUBQUERY % (args, field)))
@@ -129,7 +129,7 @@ def build_subqueries(args: str) -> list[tuple[str, str]]:
 def post_upstream(body: bytes, auth: str | None) -> tuple[int, bytes]:
     headers = {"Content-Type": "application/json"}
     if auth:
-        # Forwarded to the hardcoded UPSTREAM only — never logged.
+        # Forwarded to the hardcoded UPSTREAM only, never logged.
         headers["Authorization"] = auth
     req = urllib.request.Request(UPSTREAM, data=body, headers=headers, method="POST")
     try:
@@ -149,7 +149,7 @@ def is_retryable(status: int, parsed: dict | None) -> bool:
 
     Retryable:
       * HTTP 403/429 (primary + secondary rate limits) and any 5xx
-      * HTTP 200 carrying RESOURCE_LIMITS_EXCEEDED or RATE_LIMITED — GitHub's
+      * HTTP 200 carrying RESOURCE_LIMITS_EXCEEDED or RATE_LIMITED: GitHub's
         cost guard is load-dependent, not a property of the query: the very same
         split query succeeded on 2026-07-22 and failed on 2026-07-21 with
         rateLimit.cost=1, i.e. already at the cost floor.
@@ -173,7 +173,7 @@ def post_upstream_with_retry(name: str, body: bytes, auth: str | None) -> tuple[
     """post_upstream plus exponential backoff for transient upstream failures.
 
     Returns (status, raw, parsed) of the LAST attempt. Only the one failing
-    sub-query is repeated — the other six keep their already-valid results.
+    sub-query is repeated; the other six keep their already-valid results.
     Worst case adds RETRY_BACKOFF seconds; the job runs ~40 s against a
     10-minute timeout, so there is ample headroom.
     """
@@ -188,7 +188,7 @@ def post_upstream_with_retry(name: str, body: bytes, auth: str | None) -> tuple[
             return status, raw, parsed
         delay = RETRY_BACKOFF[attempt - 1]
         # Token-free: only the sub-query name, the status and the delay.
-        log("sub-query '%s' transient failure (HTTP %d) — retry %d/%d in %.0fs"
+        log("sub-query '%s' transient failure (HTTP %d), retry %d/%d in %.0fs"
             % (name, status, attempt, attempts - 1, delay))
         time.sleep(delay)
     raise AssertionError("unreachable")  # pragma: no cover
@@ -217,7 +217,7 @@ def subresponse_error(name: str, status: int, parsed: dict | None, raw: bytes) -
     message = ("graphql_split_proxy: sub-query '%s' returned user=null without errors (HTTP %d)"
                % (name, status))
     # Non-GraphQL error bodies (e.g. secondary rate limit) carry a top-level
-    # REST-style "message" — surface it for diagnosis (never contains tokens).
+    # REST-style "message": surface it for diagnosis (never contains tokens).
     if isinstance(parsed, dict) and isinstance(parsed.get("message"), str):
         message += ": " + parsed["message"]
     return [{"message": message}]
@@ -239,7 +239,7 @@ def handle_split(payload: dict, auth: str | None) -> tuple[int, dict]:
         responses[name] = parsed
     # Reassemble the exact ResponseType shape the Action expects.
     coll = responses["calendar"]["data"]["user"]["contributionsCollection"]
-    coll["commitContributionsByRepository"] = []  # STUB — panel is stripped downstream
+    coll["commitContributionsByRepository"] = []  # STUB: panel is stripped downstream
     for field in TOTAL_FIELDS:
         coll[field] = responses[field]["data"]["user"]["contributionsCollection"][field]
     result = {"data": {"user": {
@@ -251,7 +251,7 @@ def handle_split(payload: dict, auth: str | None) -> tuple[int, dict]:
 
 def handle_passthrough(raw_body: bytes, auth: str | None) -> tuple[int, bytes]:
     # fetchNext and anything else: byte-verbatim in both directions, but with the
-    # same transient-failure retry — a paginating fetchNext hits the very same
+    # same transient-failure retry: a paginating fetchNext hits the very same
     # load-dependent guard.
     status, raw, _parsed = post_upstream_with_retry("passthrough", raw_body, auth)
     return status, raw
@@ -261,7 +261,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, format: str, *args) -> None:  # noqa: A002 (stdlib signature)
         # Route the default per-request line through log(); it contains only
-        # method/path/status — never headers.
+        # method/path/status, never headers.
         log("%s - %s" % (self.address_string(), format % args))
 
     def _reply(self, status: int, body: bytes) -> None:
@@ -308,7 +308,7 @@ class Handler(BaseHTTPRequestHandler):
                 log("POST /graphql: passthrough")
                 status, body = handle_passthrough(raw_body, auth)
                 self._reply(status, body)
-        except Exception as exc:  # e.g. URLError / timeout — fail loud, token-free
+        except Exception as exc:  # e.g. URLError / timeout: fail loud, token-free
             log("upstream request failed: %r" % (exc,))
             self._reply_json(502, {"errors": [{
                 "message": "graphql_split_proxy: upstream request failed: %r" % (exc,),

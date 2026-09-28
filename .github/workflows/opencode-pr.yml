@@ -2,9 +2,19 @@ name: Update open-source work section
 
 # Keeps the "Open-source work" section of the README in sync with PUBLIC upstream
 # data: the GitHub search API (issues + PRs opened in repositories the owner does
-# NOT own) and the unauthenticated api.npmjs.org download counters. Only the text
-# between STORY:START/END and FRESH:START/END is regenerated; it commits only when
-# something actually changed. No `push` trigger -> no self-trigger loop.
+# NOT own), the unauthenticated npm registry search (registry.npmjs.org) and the
+# unauthenticated api.npmjs.org download counters. Only the text between
+# STORY:START/END and FRESH:START/END is regenerated. It commits only when the
+# README changed, and in practice every run that is not fatal changes it: the
+# FRESH stamp carries the minute of the run. That daily commit is intended, it
+# keeps the scheduled workflows active against GitHub's 60-day inactivity
+# disablement. No `push` trigger -> no self-trigger loop.
+#
+# SHARED BRANCH: featured-from-pins.yml also commits to `main`, in its own
+# concurrency group. The push goes through .github/scripts/push_with_retry.sh
+# (rebase + bounded retry on a concurrent push, loud failure on a real
+# conflict, never a force-push), and only from a run on refs/heads/main: a
+# manual dispatch from another branch leaves main alone.
 #
 # The file name is deliberately unchanged: the run history of a workflow hangs on
 # its PATH, not on the `name:` field above (44 runs on
@@ -54,9 +64,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- README.md; then
             echo "README unchanged, nothing to commit (idempotent no-op)."
+          elif [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            # A manual dispatch from a feature branch must not push that
+            # branch's commits onto main.
+            echo "::warning::Run is on ${GITHUB_REF}, not refs/heads/main: README change not committed or pushed."
           else
             git add README.md
             git commit -m "chore: refresh open-source work section [skip ci]"
-            git push origin HEAD:main
+            bash .github/scripts/push_with_retry.sh main
             echo "Open-source work section updated and pushed to main."
           fi

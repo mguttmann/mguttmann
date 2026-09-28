@@ -1,5 +1,5 @@
 # =============================================================================
-# OPTIONAL / DISABLED-BY-DEFAULT EXAMPLE — lowlighter/metrics
+# OPTIONAL / DISABLED-BY-DEFAULT EXAMPLE: lowlighter/metrics
 # =============================================================================
 #
 # This file ends in `.example` ON PURPOSE: GitHub Actions only runs `*.yml` /
@@ -8,23 +8,27 @@
 #
 # To activate it:
 #   1. Create a CLASSIC Personal Access Token (PAT). The metrics action does NOT
-#      work with the built-in GITHUB_TOKEN — it needs a classic PAT (minimum
+#      work with the built-in GITHUB_TOKEN; it needs a classic PAT (minimum
 #      scopes: `repo` for stats incl. private, or just `public_repo` for public;
 #      add `read:org` / `read:user` for org and follower data). A fine-grained
 #      token is NOT supported by all plugins.
 #   2. Add that PAT as a repository secret named `METRICS_TOKEN`.
 #   3. Rename this file to `metrics.yml`.
 #
-# Why it's optional here: the `profile-summary-cards.yml` and
-# `profile-3d-contrib.yml` workflows already cover stats and the contribution
-# visual using ONLY the built-in GITHUB_TOKEN (no PAT, no secret management).
+# Why it's optional here: the `activity-composite.yml` workflow already covers
+# the contribution visual and the language stats (3D calendar + language donut),
+# with the private-repo read isolated in one environment-scoped job.
 # `lowlighter/metrics` is far more powerful (dozens of plugins) but its PAT
 # requirement adds secret-management and token-rotation overhead. It is provided
 # as an OWNER DECISION: enable it only if you want metrics' richer plugin
-# output beyond what summary-cards + 3d-contrib already deliver.
+# output beyond what the composite activity graphic already delivers.
 #
-# Output convention (consistent with the other workflows): committed SVG on the
-# `output` branch, embeddable at:
+# Output convention: committed SVG on the `output` branch, embeddable at the
+# URL below. NOTE: this example still publishes with the metrics action's own
+# commit step, not with .github/actions/publish-output like the active
+# workflows, so it has no rebase retry against a concurrent publisher. Switch
+# it to the local action before enabling it.
+#
 #   https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-metrics.svg
 #
 # Action reference (verified June 2026): lowlighter/metrics@v3.34 (latest stable
@@ -57,7 +61,7 @@ jobs:
       - name: Generate metrics SVG
         uses: lowlighter/metrics@v3.34
         with:
-          # Classic PAT — NOT the built-in GITHUB_TOKEN (see header).
+          # Classic PAT, NOT the built-in GITHUB_TOKEN (see header).
           token: ${{ secrets.METRICS_TOKEN }}
           # Whose metrics to render.
           user: mguttmann
@@ -67,7 +71,7 @@ jobs:
           plugin_languages: yes
           plugin_languages_limit: 6
           # Commit the rendered SVG to the shared `output` branch so it sits
-          # alongside the snake / summary-cards / 3d-contrib assets.
+          # alongside the snake, 3d-contrib and pins.json assets.
           filename: github-metrics.svg
           output_action: commit
           committer_branch: output

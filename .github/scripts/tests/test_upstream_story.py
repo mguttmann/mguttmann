@@ -1529,6 +1529,50 @@ class StoryTest(unittest.TestCase):
                 story.assert_no_forbidden_dashes("x %s y" % dash)
         story.assert_no_forbidden_dashes(GOLDEN)
 
+    def test_dash_entities_are_normalised_and_never_published(self):
+        """GitHub renders &mdash; and its numeric forms as the dash itself, so
+        the text rule covers them on both sides of the chokepoint. A doubly
+        escaped &amp;mdash; renders as literal text and stays untouched."""
+        forms = ("&mdash;", "&#8212;", "&#x2014;", "&#X2014;", "&#xFE58;", "&#xfe58;",
+                 "&#08212;", "&ndash;", "&#8211;", "&#x2013;", "&#x02013;", "&horbar;", "&#8210;")
+        for form in forms:
+            with self.subTest(form=form):
+                self.assertEqual(story.normalize_dashes("a %s b" % form), "a - b")
+        self.assertEqual(story.normalize_dashes("a &amp;mdash; b"), "a &amp;mdash; b")
+        self.assertEqual(story.normalize_dashes("a &mdash b &middot; c"), "a &mdash b &middot; c")
+        for form in ("&mdash;", "&#8212;", "&#x2014;", "&#X2014;", "&ndash;", "&#8211;", "&#x2013;"):
+            with self.subTest(output_form=form):
+                with self.assertRaises(story.Fatal):
+                    story.assert_no_forbidden_dashes("x %s y" % form)
+        story.assert_no_forbidden_dashes("x &amp;mdash; y &#183; z")
+        # End to end: an entity in a foreign title never reaches the README.
+        self.serve(nodes=main_nodes() + [
+            _issue(8, "fix: a &mdash; b &#x2013; c", CLAUDE_CODE, "OPEN", "2026-07-25T04:00:00Z")])
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("fix: a - b - c", self.story_block())
+        self.assertNotIn("&mdash;", self.story_block())
+
+    def test_non_integer_registry_total_is_not_logged_raw(self):
+        """A foreign value never reaches the log verbatim: a non-integer total
+        is reported by its type name, and the run degrades as before."""
+        raw = "999 \u2014 <script>"
+        MockHandler.registry_responder = staticmethod(lambda query: (200, json.dumps(
+            {"objects": registry_objects(), "total": raw}).encode()))
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("degraded", self.fresh_block())
+        self.assertIn("incomplete result (6 of total of type str)", out)
+        self.assertNotIn("<script>", out)
+        self.assertNotIn("999", out)
+        self.assertNotIn("\u2014", out)
+        # An integer total that does not match is still shown as the number.
+        MockHandler.registry_responder = staticmethod(
+            lambda query: (200, registry_response(registry_objects(), total=251)))
+        self.readme.write_text(README_TEMPLATE, encoding="utf-8")
+        code, out = self.run_main()
+        self.assertIn("incomplete result (6 of 251)", out)
+
     def test_marker_strings_in_foreign_titles_are_neutralised(self):
         hostile = "x <!-- STORY:END --> <!-- FRESH:START --> [y](javascript:z) <b>w</b>"
         self.serve(nodes=[_issue(9, hostile, CLAUDE_CODE, "OPEN", "2026-07-25T04:00:00Z")],

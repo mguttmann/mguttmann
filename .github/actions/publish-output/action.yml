@@ -1,0 +1,39 @@
+# Additive publish to a shared branch, with a rebase retry against concurrent
+# publishers. Replaces crazy-max/ghaction-github-pages@v5 (keep_history: true,
+# allow_empty_commit: false) for the three workflows that publish to `output`.
+#
+# keep_history and allow_empty_commit are deliberately NOT inputs: additive and
+# never empty are hard-wired, so no caller can misconfigure them into a prune,
+# a force-push or an empty commit. The logic lives in
+# .github/scripts/publish_output.sh (tested against a local bare repository in
+# .github/scripts/tests/test_publish_output.py).
+name: Publish to a shared branch
+description: Copy a directory onto a branch additively and push it, retrying on a concurrent push.
+
+inputs:
+  target_branch:
+    description: Branch to publish to.
+    required: false
+    default: output
+  build_dir:
+    description: Directory whose contents are copied onto the branch root.
+    required: true
+  commit_message:
+    description: Commit message for the publish commit.
+    required: true
+  token:
+    description: Token used for the clone and the push.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Publish additively (rebase retry on a concurrent push)
+      shell: bash
+      env:
+        PUBLISH_BRANCH: ${{ inputs.target_branch }}
+        PUBLISH_SOURCE_DIR: ${{ inputs.build_dir }}
+        PUBLISH_MESSAGE: ${{ inputs.commit_message }}
+        PUBLISH_TOKEN: ${{ inputs.token }}
+      run: bash "${GITHUB_ACTION_PATH}/../../scripts/publish_output.sh"

@@ -23,8 +23,12 @@
 #      (derived from `mergedBy`), the repository's star magnitude floored to
 #      thousands, the count, the three NEWEST merged titles and a link to the
 #      full list. Only a merge by someone other than the author counts. The
-#      block has a fixed maximum length: every further merge raises a count,
-#      it never adds a line. A merge does not age, so no date is printed.
+#      block has a bounded length: at most three titles plus the link per
+#      repository and at most MAX_MERGED_REPOS (5) repositories. A repository
+#      with three or more counted merges only raises its count on the next
+#      merge; one with fewer gains a title line, and a newly merged-into
+#      repository adds its block until the cap of five is reached. A merge
+#      does not age, so no date is printed.
 #   4. OPEN RIGHT NOW - at most three items, each with an ISO date. A DATE,
 #      never a distance: "3 days ago" turns into "89 days ago" without anyone
 #      touching it, and this account's public activity swings by a factor of 62
@@ -88,8 +92,11 @@
 # DETERMINISM: every list is sorted locally (API order is never trusted), the
 # timestamp and the run metadata are PARAMETERS rather than global state, and
 # nothing derived from "now" other than that stamp reaches the output. Same
-# input, byte-identical output - which is what makes the second daily run a
-# no-op instead of a commit.
+# input and same stamp, byte-identical output. The FRESH stamp carries the
+# minute of the run, so every run that is not fatal (a degraded one included)
+# rewrites FRESH and commits. That is intended: the daily commit keeps the
+# scheduled workflows of this repository active against GitHub's 60-day
+# inactivity disablement.
 #
 # Standard library only (consistency with lang_card.py / graphql_split_proxy.py).
 #
@@ -165,6 +172,25 @@ GITHUB_REPO_URL = re.compile(
 DASHES = "".join(chr(c) for c in (0x2012, 0x2013, 0x2014, 0x2015, 0x2E3A, 0x2E3B,
                                   0xFE31, 0xFE32, 0xFE58, 0xFE63))
 FORBIDDEN_DASHES = (chr(0x2013), chr(0x2014))       # the owner's text rule
+
+
+def _entity_pattern(code_points: tuple[int, ...], names: tuple[str, ...]) -> re.Pattern:
+    """HTML character references that GitHub renders as one of the given
+    code points: the named forms plus decimal and hexadecimal numeric forms
+    (any case, leading zeros allowed), each with its semicolon. A doubly
+    escaped `&amp;mdash;` is NOT matched: it renders as the literal text."""
+    alternatives = ["&%s;" % name for name in names]
+    for cp in code_points:
+        alternatives.append("&#0*%d;" % cp)
+        alternatives.append("&#[xX]0*%s;" % "".join(
+            "[%s%s]" % (d.lower(), d.upper()) if d.isalpha() else d for d in "%x" % cp))
+    return re.compile("|".join(alternatives))
+
+
+# Entity forms of every code point in DASHES (input side) and of the two
+# forbidden ones (output side).
+DASH_ENTITIES = _entity_pattern(tuple(ord(d) for d in DASHES), ("mdash", "ndash", "horbar"))
+FORBIDDEN_DASH_ENTITIES = _entity_pattern((0x2013, 0x2014), ("mdash", "ndash"))
 
 MAX_NEWEST_MERGED = 3                               # per repository; the rest is a count plus a link
 MAX_OPEN_ITEMS, MAX_MERGED_REPOS, MAX_TITLE = 3, 5, 96
@@ -467,8 +493,11 @@ def discover_packages() -> list[dict]:
         raise Degraded("%s was unavailable" % REGISTRY_SOURCE) from None
     objects, total = parsed.get("objects"), parsed.get("total")
     if not isinstance(objects, list) or not isinstance(total, int) or total != len(objects):
+        # A foreign value is never logged raw: a non-integer total is reported
+        # by its type name only.
+        shown = str(total) if isinstance(total, int) else "total of type %s" % type(total).__name__
         log("%s: incomplete result (%s of %s)"
-            % (REGISTRY_SOURCE, len(objects) if isinstance(objects, list) else "?", total))
+            % (REGISTRY_SOURCE, len(objects) if isinstance(objects, list) else "?", shown))
         raise Degraded("%s returned an incomplete package list" % REGISTRY_SOURCE)
     packages: dict[str, dict] = {}
     for obj in objects:
@@ -574,7 +603,7 @@ def assert_no_forbidden_dashes(block: str) -> None:
     """The owner's text rule, output side: whatever path produced a string,
     an em or en dash never reaches the published README. Every foreign title
     is normalised on the way in, so a hit here is OUR defect."""
-    if any(dash in block for dash in FORBIDDEN_DASHES):
+    if any(dash in block for dash in FORBIDDEN_DASHES) or FORBIDDEN_DASH_ENTITIES.search(block):
         raise Fatal("em or en dash in the rendered block - aborting")
 
 
@@ -646,7 +675,9 @@ def kmag(stars: int) -> str:
 
 def normalize_dashes(text: str) -> str:
     """Foreign text (titles by third parties) may carry em or en dashes; the
-    owner's text rule forbids them in anything this script publishes."""
+    owner's text rule forbids them in anything this script publishes. Their
+    HTML entity forms count too, because GitHub renders them as the dash."""
+    text = DASH_ENTITIES.sub("-", text)
     for dash in DASHES:
         text = text.replace(dash, "-")
     return text
@@ -714,8 +745,10 @@ def _merged_lines(items: list[dict]) -> list[str]:
                      % (repo, repo, " (%s stars)" % magnitude if magnitude else "",
                         len(prs), "s" if len(prs) != 1 else "", who,
                         ", newest first:" if len(prs) > 1 else ":"))
-        # A FIXED number of lines per repository: the next merge raises the
-        # count above and replaces the oldest title here, it never adds a line.
+        # At most MAX_NEWEST_MERGED title lines per repository: once a repository
+        # has that many counted merges, the next one raises the count above and
+        # replaces the oldest title here instead of adding a line. Below that,
+        # each merge adds one title line.
         for pr in prs[:MAX_NEWEST_MERGED]:
             lines.append("  - [#%d](%s) %s" % (pr["number"], pr["url"], esc_md(shorten(pr["title"]))))
         lines.append("  - [full list](https://github.com/%s/pulls?q=%s)"

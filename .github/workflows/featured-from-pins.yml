@@ -9,8 +9,7 @@
 #      the repo's real description; fork honestly labelled; stars only when there
 #      are stars) and commits it back to `main` IDEMPOTENTLY, and
 #   3. writes a machine-readable `pins.json` contract and publishes it to the
-#      shared `output` branch (next to the snake / summary-card / 3d-contrib
-#      assets) at:
+#      shared `output` branch (next to the snake and 3d-contrib assets) at:
 #        https://raw.githubusercontent.com/mguttmann/mguttmann/output/pins.json
 #
 # ---------------------------------------------------------------------------
@@ -26,12 +25,12 @@
 #
 #   PUBLIC-ONLY GRACEFUL FALLBACK (no private PAT, ever): the read step is
 #   defensive. If GraphQL ever returns no usable nodes (token change, outage),
-#   the job does NOT fail and does NOT silently demand a PAT — it logs a clear
+#   the job does NOT fail and does NOT silently demand a PAT: it logs a clear
 #   warning and SKIPS the README/pins.json update for that run, leaving the
 #   last good content in place. (An optional PAT path is described in a comment
 #   on the read step but is intentionally NOT wired in; the default is
 #   public-only.) GraphQL has no unauthenticated mode, so the only token-free
-#   public alternative would be HTML scraping — deliberately avoided.
+#   public alternative would be HTML scraping, deliberately avoided.
 #
 # ---------------------------------------------------------------------------
 # LOOP / RE-TRIGGER PROTECTION (the README commit lands on `main`, which this
@@ -49,13 +48,23 @@
 #   the actions/* majors were raised together because Node 20 is removed from
 #   the runners on 2026-09-16 and the v4/v5 line stays on node20):
 #   - actions/checkout@v7
-#   - crazy-max/ghaction-github-pages@v5 (output-branch publish, keep_history)
+#   - actions/setup-python@v7
+#   - ./.github/actions/publish-output (local: additive output-branch publish
+#     with a rebase retry; replaced crazy-max/ghaction-github-pages@v5)
+#
+# SHARED BRANCHES: this workflow pushes to `main` (README) and to `output`
+# (pins.json, repos.json). Other workflows push to both in their own
+# concurrency groups, so both pushes go through .github/scripts/push_with_retry.sh:
+# a push that loses the race is rebased onto the new tip and retried, a real
+# conflict fails loud, nothing is ever force-pushed. The README commit is
+# pushed only from a run on refs/heads/main; a manual dispatch from another
+# branch leaves main alone.
 name: Sync Featured from Pins
 
 on:
-  # Refresh once a day in the early morning (UTC), staggered after the other
-  # output-branch publishers (summary-cards 05:00, 3d-contrib 05:30) to avoid
-  # racing for the shared `output` branch.
+  # Refresh once a day in the early morning (UTC), after the daily 3d-contrib
+  # run (05:30). The stagger only makes a collision less likely; the push
+  # retry is what makes a collision harmless.
   schedule:
     - cron: "0 6 * * *"
 
@@ -75,8 +84,9 @@ on:
 permissions:
   contents: write
 
-# Serialize overlapping runs (scheduled + push) that would race to push the
-# shared `output` branch / commit README. Do not cancel an in-progress run.
+# Serialize overlapping runs of THIS workflow (scheduled + push). Runs of the
+# other publishers are not in this group; push_with_retry.sh covers those.
+# Do not cancel an in-progress run.
 concurrency:
   group: featured-from-pins
   cancel-in-progress: false
@@ -97,7 +107,7 @@ jobs:
       # the job: we emit a warning and let STEP 2 detect "no pins" and skip the
       # update, so a transient API issue never wipes the Featured block.
       #
-      # OPTIONAL PAT PATH (NOT enabled by default — public-only is the default):
+      # OPTIONAL PAT PATH (NOT enabled by default; public-only is the default):
       #   To read PRIVATE pins or raise rate limits, add a repo secret e.g.
       #   PINS_TOKEN and change the Authorization header below to use it. Leave
       #   it on GITHUB_TOKEN for a public profile.
@@ -119,10 +129,18 @@ jobs:
           echo "---- pins_raw.json ----"
           cat pins_raw.json
 
+      # Pinned like every other job that runs python3, so the generator does
+      # not depend on the system Python of the runner image.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
       # ---- STEP 2: render FEATURED block + pins.json, commit README -------
       # The generator is written inline (single source of truth) and is fully
       # idempotent: identical pins -> byte-identical README block and pins.json.
       # If GraphQL returned zero usable nodes, we SKIP all writes this run.
+
       - name: Generate Featured block + pins.json and commit README
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,7 +150,7 @@ jobs:
           # --- guard: if no usable pins, skip the update entirely ---
           node_count=$(python3 -c "import json;d=json.load(open('pins_raw.json'));print(len(d.get('data',{}).get('user',{}).get('pinnedItems',{}).get('nodes',[]) or []))")
           if [ "$node_count" -eq 0 ]; then
-            echo "::warning::No usable pinned repositories found — skipping README/pins.json update (last good content preserved)."
+            echo "::warning::No usable pinned repositories found, skipping README/pins.json update (last good content preserved)."
             echo "skip_update=1" >> "$GITHUB_ENV"
             exit 0
           fi
@@ -152,6 +170,21 @@ jobs:
           # it is searchable, linkable and screen-reader friendly, it costs zero
           # bytes, it does not travel through camo, and it cannot break.
           MAX_DESC = 160
+
+          # The owner's text rule: no em or en dash (nor a look-alike) in the
+          # README. Repository descriptions are foreign text, so they are
+          # normalised to a plain hyphen before shortening. Built from code
+          # points, so this workflow file itself stays free of them. Entity
+          # forms need no handling here: html.escape() turns `&mdash;` into
+          # `&amp;mdash;`, which renders as literal text. pins.json keeps the
+          # raw description; it is data for the site, not README text.
+          DASHES = "".join(chr(c) for c in (0x2012, 0x2013, 0x2014, 0x2015, 0x2E3A,
+                                            0x2E3B, 0xFE31, 0xFE32, 0xFE58, 0xFE63))
+
+          def normalize_dashes(text):
+              for dash in DASHES:
+                  text = text.replace(dash, "-")
+              return text
 
           def normalize_pins(raw):
               nodes = (raw.get("data", {}).get("user", {})
@@ -174,11 +207,11 @@ jobs:
               return pins
 
           def shorten(text, limit=MAX_DESC):
-              text = " ".join((text or "").split())
+              text = " ".join(normalize_dashes(text or "").split())
               if len(text) <= limit:
                   return text
               cut = text[:limit].rsplit(" ", 1)[0]
-              return cut.rstrip(" ,.;:—-") + "…"
+              return cut.rstrip(" ,.;:-") + "…"
 
           def render_cell(pin):
               # Everything interpolated below comes from the GitHub API and is
@@ -207,8 +240,8 @@ jobs:
 
           def render_block(pins):
               if not pins:
-                  inner = ('<sub><em>No pinned repositories yet — '
-                           "pin a repository on the profile to feature it here.</em></sub>")
+                  inner = ('<sub><em>No pinned repositories yet. '
+                           "Pin a repository on the profile to feature it here.</em></sub>")
                   return f'{START}\n\n<div align="center">\n\n{inner}\n\n</div>\n\n{END}'
               # 2 cells per row. Text cells could take 3-up, but 2-up keeps the
               # descriptions readable instead of squeezing them into narrow columns.
@@ -250,20 +283,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- README.md; then
-            echo "README unchanged — nothing to commit (idempotent no-op)."
+            echo "README unchanged, nothing to commit (idempotent no-op)."
+          elif [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            # A manual dispatch from a feature branch must not push that
+            # branch's commits onto main.
+            echo "::warning::Run is on ${GITHUB_REF}, not refs/heads/main: README change not committed or pushed."
           else
             git add README.md
             # [skip ci] + the GITHUB_TOKEN no-recurse rule prevent a trigger loop.
             git commit -m "chore: sync Featured projects from pins [skip ci]"
-            git push origin HEAD:main
+            # Rebase retry against a concurrent push to main (opencode-pr);
+            # a real conflict fails loud, never a force-push.
+            bash .github/scripts/push_with_retry.sh main
             echo "README Featured block updated and pushed to main."
           fi
 
       # ---- STEP 3: publish pins.json to the shared `output` branch --------
-      # Same publish mechanism as the snake / summary-card / 3d-contrib
-      # workflows: crazy-max with keep_history:true CLONES the existing `output`
-      # branch and commits additively, so those co-existing assets are
-      # PRESERVED (a force-push, the default, would delete them).
+      # Same publish mechanism as the snake and 3d-contrib workflows: the local
+      # publish-output action CLONES the existing `output` branch and commits
+      # additively, so those co-existing assets are PRESERVED, and it rebases
+      # and retries when a concurrent publisher pushed first.
       # Generate repos.json: ALL public repositories - the live "Repositories"
       # contract the portfolio site reads (so its Repos tab always shows the
       # current public repos, generated nightly). Public + non-archived only;
@@ -292,12 +331,9 @@ jobs:
 
       - name: Publish pins.json to the output branch
         if: env.skip_update != '1'
-        uses: crazy-max/ghaction-github-pages@v5
+        uses: ./.github/actions/publish-output
         with:
           target_branch: output
           build_dir: staging
-          keep_history: true
-          allow_empty_commit: false
           commit_message: "chore: refresh pins.json + repos.json contracts"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}

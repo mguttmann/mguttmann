@@ -12,7 +12,7 @@
 # secret. It runs in the compose job (Job B) which deliberately does NOT declare
 # `environment: stats`, so STATS_TOKEN is not even in scope here. The donut data
 # arrives ONLY as a finished SVG fragment (an Actions artifact), never as a
-# token — so no credential ever reaches the third-party 3D Action or this merge.
+# token, so no credential ever reaches the third-party 3D Action or this merge.
 #
 # GEOMETRY (verified against the live 3D SVG, viewBox 0 0 1280 850):
 #   * The isometric contribution diamond occupies the upper band and slopes down
@@ -20,7 +20,7 @@
 #   * The radar chart sits on the RIGHT (abs bbox ~x[1132..1259] y[658..788];
 #     visually the pentagon is centre-right, y ~100..430).
 #   * The contribution counter ("N contributions ☆ ⑂") is bottom-CENTRE at y~830.
-#   * The bottom-LEFT region (x < ~350, y > ~500) is EMPTY — exactly where the
+#   * The bottom-LEFT region (x < ~350, y > ~500) is EMPTY, exactly where the
 #     stripped language panel used to be. The donut is placed there.
 # The placement transform is therefore fixed (it does not depend on the daily
 # data, which only changes the diamond's interior, never the empty bottom-left).
@@ -30,7 +30,7 @@
 #
 # FAIL-LOUD: aborts non-zero if either input is missing/empty, if the 3D SVG has
 # no closing </svg>, if the fragment is not a single <svg> root, or if the merged
-# result is not well-formed XML — so the workflow never pushes a broken compose.
+# result is not well-formed XML, so the workflow never pushes a broken compose.
 #
 # Usage:
 #   merge_donut_into_3d.py THREE_D.svg DONUT_GROUP.svg OUTPUT.svg
@@ -157,7 +157,7 @@ def merge(three_d_svg: str, donut_fragment: str) -> str:
     )
 
     # Insert immediately BEFORE the 3D SVG's final </svg> so the donut paints on
-    # top of the (empty) bottom-left background — nothing else is there to occlude.
+    # top of the (empty) bottom-left background; nothing else is there to occlude.
     close_iter = list(_SVG_CLOSE_RE.finditer(three_d_svg))
     if not close_iter:
         raise ValueError("3D SVG has no closing </svg> tag")
@@ -181,7 +181,7 @@ def main(argv: list[str]) -> int:
 
     # Well-formedness gate: parse the merged result with a HARDENED expat parser.
     # We reject any DTD / external entity / parameter entity so the parser is not
-    # exposed to XXE or billion-laughs amplification — even though the input is
+    # exposed to XXE or billion-laughs amplification, even though the input is
     # our own freshly generated SVG (stdlib only; no defusedxml dependency on the
     # runner, matching the token-free strip step's stdlib-only policy). We fail
     # loud so a broken (or DTD-bearing) compose is never written/pushed.

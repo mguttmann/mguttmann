@@ -3,8 +3,8 @@
 # lang_card.py  ·  Top-languages card for the profile repo mguttmann/mguttmann
 # ---------------------------------------------------------------------------
 # Renders an HONEST "most used languages" SVG by aggregating the language BYTES
-# reported by GitHub across the owner's OWN repositories — public AND private,
-# with FORKS EXCLUDED. This is deliberately a self-written renderer (Python
+# reported by GitHub across the owner's OWN repositories (public AND private,
+# with FORKS EXCLUDED). This is deliberately a self-written renderer (Python
 # standard library only, no third-party package, no external Action) so that the
 # access token is used by THIS script and nothing else.
 #
@@ -13,7 +13,7 @@
 #     cannot see private repos without handing it a PAT.
 #   - This script reads private repos through the env-isolated STATS_TOKEN, sums
 #     the bytes itself, and writes a static SVG that the workflow commits to the
-#     `output` branch — high uptime, no render-time third-party host.
+#     `output` branch: high uptime, no render-time third-party host.
 #
 # TOKEN HANDLING (security-critical):
 #   - The token is read ONLY from the environment variable STATS_TOKEN.
@@ -29,9 +29,9 @@
 # Only the AGGREGATE language byte distribution is rendered.
 #
 # Output: THREE artefacts from the SAME aggregated data:
-#   - dist/top-languages.svg          — horizontal bar card  (LANGCARD_OUTPUT)
-#   - dist/top-languages-donut.svg    — standalone donut + legend  (LANGDONUT_OUTPUT)
-#   - dist/donut-group.svg            — donut as a bare, self-contained <svg>
+#   - dist/top-languages.svg          : horizontal bar card  (LANGCARD_OUTPUT)
+#   - dist/top-languages-donut.svg    : standalone donut + legend  (LANGDONUT_OUTPUT)
+#   - dist/donut-group.svg            : donut as a bare, self-contained <svg>
 #                                       FRAGMENT (one <g> root) for COMPOSITION
 #                                       into the 3D contribution graphic by the
 #                                       token-free merge step (LANGDONUT_GROUP_OUTPUT)
@@ -70,7 +70,7 @@ OUTPUT_PATH = os.environ.get("LANGCARD_OUTPUT", "dist/top-languages.svg")
 DONUT_OUTPUT_PATH = os.environ.get(
     "LANGDONUT_OUTPUT", "dist/top-languages-donut.svg"
 )
-# Donut GROUP fragment output — a bare, self-contained <svg> (single root) that
+# Donut GROUP fragment output: a bare, self-contained <svg> (single root) that
 # the token-free merge step composes INTO the 3D contribution graphic. This is
 # the PRIMARY artefact of the composite pipeline and is ALWAYS written.
 GROUP_OUTPUT_PATH = os.environ.get(
@@ -213,7 +213,7 @@ def list_own_nonfork_repos(token: str) -> List[str]:
         if not isinstance(repos, list) or not repos:
             break
         for repo in repos:
-            # Skip forks — only the owner's OWN code should count.
+            # Skip forks: only the owner's OWN code should count.
             if repo.get("fork"):
                 continue
             name = repo.get("full_name")
@@ -245,7 +245,7 @@ def aggregate_language_bytes(token: str, repos: List[str]) -> Dict[str, int]:
         for lang, size in langs.items():
             totals[lang] = totals.get(lang, 0) + int(size)
     if skipped:
-        # Repo names are NOT logged here — only an aggregate count.
+        # Repo names are NOT logged here, only an aggregate count.
         print(f"note: {skipped} repo(s) returned 403/404 and were skipped",
               file=sys.stderr)
     return totals
@@ -408,7 +408,7 @@ def render_donut_svg(rows: List[Tuple[str, int, float]]) -> str:
 
     # Track ring (full circle in the surface colour). It is drawn UNDER the
     # coloured segments so the small gap left between adjacent segments reveals
-    # this darker surface as a crisp separator line — this keeps neighbouring
+    # this darker surface as a crisp separator line; this keeps neighbouring
     # segments visually distinct even when their copper/champagne hues are close
     # in lightness (the legend additionally labels every segment).
     parts.append(
@@ -501,7 +501,7 @@ def render_donut_group(rows: List[Tuple[str, int, float]]) -> str:
     single composed visual.
 
     Design choices for legibility ON the dark 3D background (#00000f / #0E0E13):
-      * NO opaque panel — only a faint rounded backdrop at low opacity so the
+      * NO opaque panel, only a faint rounded backdrop at low opacity so the
         donut visually groups without hiding the 3D scene.
       * Each segment uses its OFFICIAL GitHub language colour (vibrant).
       * Very dark segments (e.g. PowerShell #012456) get a thin lighter edge
@@ -651,7 +651,7 @@ def main() -> int:
     totals = aggregate_language_bytes(token, repos)
     rows, total = build_rows(totals)
     if not rows or total <= 0:
-        print("error: aggregated language total is zero — refusing to write an "
+        print("error: aggregated language total is zero, refusing to write an "
               "empty card", file=sys.stderr)
         return 1
 
@@ -664,7 +664,7 @@ def main() -> int:
     # Render artefacts from the SAME rows. The PRIMARY artefact consumed
     # downstream is the donut GROUP fragment (merged into the 3D graphic). The
     # bar card and the standalone donut card are written only when their output
-    # paths are explicitly configured (kept for continuity / debugging) — by
+    # paths are explicitly configured (kept for continuity / debugging); by
     # default the composite pipeline asks for the group fragment alone.
     group_svg = render_donut_group(rows)
 

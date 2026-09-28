@@ -4,8 +4,8 @@ Eigene, **lokal gehostete** Grafik-Fallbacks für das Profil-README. Diese Datei
 
 ## Inhalt
 
-- **`.gitkeep`** — hält den Ordner im Git-Tree, falls sonst leer.
-- **`divider.svg`** — dezenter, horizontaler Trenn-Strich (GitHub-Grün, transluzenter Verlauf). Reines Inline-SVG, **kein** externer Abruf, **kein** Tracking, dark/light-neutral. Einsatz im README per:
+- **`.gitkeep`**: hält den Ordner im Git-Tree, falls sonst leer.
+- **`divider.svg`**: dezenter, horizontaler Trenn-Strich (GitHub-Grün, transluzenter Verlauf). Reines Inline-SVG, **kein** externer Abruf, **kein** Tracking, dark/light-neutral. Einsatz im README per:
 
   ```markdown
   ![](assets/divider.svg)
@@ -17,7 +17,7 @@ Eigene, **lokal gehostete** Grafik-Fallbacks für das Profil-README. Diese Datei
 
 Die **bewegten** Elemente des READMEs kommen aus zwei Quellen, für die **keine** eigenen Bilder nötig sind:
 
-1. **Snake-Animation** → wird von der GitHub Action (`snake.yml`) erzeugt und im Branch `output` abgelegt; das README bindet sie über `raw.githubusercontent.com/.../output/...` ein. Kein lokales Asset erforderlich.
-2. **Typing-Header & Banner/Divider** → externe SVG-Dienste (`readme-typing-svg`, `capsule-render`), die zur Anzeigezeit gerendert werden.
+1. **Snake-Banner** → die GitHub Action (`snake.yml`) erzeugt die Bronze-Snake und daraus das Kopfbanner `header-hero.svg` im Branch `output`; das README bindet ausschließlich `header-hero.svg` über `raw.githubusercontent.com/.../output/...` ein. Kein lokales Asset erforderlich.
+2. **Typing-Header & Footer-Welle** → externe SVG-Dienste (`readme-typing-svg`, `capsule-render`), die zur Anzeigezeit gerendert werden.
 
-`divider.svg` liegt hier als **robuster Offline-Fallback** bereit, falls einer dieser externen Dienste nicht erreichbar ist. Wird er nicht gebraucht, kann der `assets/`-Ordner beim Push weggelassen werden (siehe `DEPLOY.md`, Schritt 2).
+`divider.svg` liegt hier als **robuster Offline-Fallback** bereit, falls einer dieser externen Dienste nicht erreichbar ist. Wird er nicht gebraucht, kann der `assets/`-Ordner beim Push weggelassen werden.

@@ -1,11 +1,17 @@
 # Snake contribution animation for the special profile repo `mguttmann/mguttmann`.
 #
-# Generates an animated SVG of the GitHub contribution graph "eaten" by a snake,
-# in a dark and a light variant, and pushes the result to a dedicated `output`
-# branch. The profile README embeds the SVGs from that branch via:
+# Generates an animated SVG of the GitHub contribution graph "eaten" by a snake
+# in the BRONZE palette (github-snake-bronze.svg, the animated hero background
+# of the portfolio site) and composes it into header-hero.svg, the banner at
+# the top of the profile README. Both are pushed to the shared `output` branch:
 #
-#   dark  -> https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake-dark.svg
-#   light -> https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-contribution-grid-snake.svg
+#   https://raw.githubusercontent.com/mguttmann/mguttmann/output/header-hero.svg
+#   https://raw.githubusercontent.com/mguttmann/mguttmann/output/github-snake-bronze.svg
+#
+# header-hero.svg is the ONLY snake file the README embeds. The former light
+# and dark variants (github-contribution-grid-snake.svg / -dark.svg) are no
+# longer generated; their last copies stay on `output`, frozen, until a
+# maintenance step removes them (the publish is additive and never deletes).
 #
 # Auth: the workflow uses the built-in `GITHUB_TOKEN` only. No Personal Access
 # Token (PAT) is required, because both the contribution read and the push to the
@@ -13,8 +19,10 @@
 # permission is what lets `GITHUB_TOKEN` push the generated branch.
 #
 # Action references are pinned to the current, actively maintained major tags
-# (verified June 2026): Platane/snk v3 (latest v3.5.0, Apr 2026) and
-# crazy-max/ghaction-github-pages v5 (latest v5.0.0, Mar 2026).
+# (Platane/snk v3 verified June 2026, latest v3.5.0, Apr 2026; actions/checkout
+# v7 and actions/setup-python v7 as in the other workflows). The publish step is the
+# local ./.github/actions/publish-output (additive, with a rebase retry against
+# concurrent publishers; it replaced crazy-max/ghaction-github-pages v5).
 name: Generate Snake Animation
 
 on:
@@ -26,10 +34,18 @@ on:
   # Allow manual runs from the Actions tab (useful for the first run / debugging).
   workflow_dispatch:
 
-  # Regenerate whenever the default branch is updated.
+  # Regenerate when THIS pipeline changes. The animation depends on the
+  # contributions, not on the repository content, so an unrelated commit to
+  # main does not start a run (it used to start all three output publishers
+  # at once).
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/snake.yml
+      - .github/actions/publish-output/**
+      - .github/scripts/publish_output.sh
+      - .github/scripts/push_with_retry.sh
 
 # Least-privilege: the only mutation this workflow performs is pushing the
 # generated SVGs to the `output` branch, which requires write access to repo
@@ -37,9 +53,11 @@ on:
 permissions:
   contents: write
 
-# Serialize overlapping runs (scheduled + push) that would race to push the same
-# branch. We do NOT cancel in-progress runs, so a running generation is allowed
-# to finish rather than being aborted by a quickly following trigger.
+# Serialize overlapping runs of THIS workflow (scheduled + push). The other
+# `output` publishers run in their own groups; the publish step's rebase retry
+# covers a collision with them. We do NOT cancel in-progress runs, so a running
+# generation is allowed to finish rather than being aborted by a quickly
+# following trigger.
 concurrency:
   group: snake-animation
   cancel-in-progress: false
@@ -50,24 +68,33 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      # Generate the contribution-grid snake animation as SVG (light + dark).
-      # `svg-only` is the faster variant of Platane/snk that skips GIF rendering.
-      # File names are chosen to match exactly what the profile README embeds
-      # from the `output` branch root.
-      - name: Generate snake SVGs (light + dark)
+      # Needed for the local publish action (./.github/actions/publish-output).
+      # No credentials are persisted: the publish step brings its own token.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Generate the contribution-grid snake animation as SVG. `svg-only` is
+      # the faster variant of Platane/snk that skips GIF rendering.
+      - name: Generate bronze snake SVG
         uses: Platane/snk/svg-only@v3
         with:
           github_user_name: ${{ github.repository_owner }}
-          # One file per line. The dark variant uses the github-dark palette.
-          # The BRONZE variant recolours the contribution cells into 5 copper
+          # The BRONZE palette recolours the contribution cells into 5 copper
           # intensity steps (empty -> bright) with a bright champagne snake, to
           # match the Executive Dark Luxury theme. The portfolio site uses it as
-          # the animated hero background behind the name; the README keeps the
-          # standard dark snake.
+          # the animated hero background behind the name; the README embeds it
+          # only inside header-hero.svg (next step).
           outputs: |
-            dist/github-contribution-grid-snake.svg
-            dist/github-contribution-grid-snake-dark.svg?palette=github-dark
             dist/github-snake-bronze.svg?color_snake=#e6c98f&color_dots=#16161d,#43331f,#6e5430,#9c7a43,#cca066
+
+      # Pinned like every other job that runs python3, so the hero step does
+      # not depend on the system Python of the runner image.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
 
       # Compose the hero banner: overlay the wordmark + tagline on top of the
       # bronze snake, on a solid midnight base (so it reads on BOTH light and
@@ -106,25 +133,18 @@ jobs:
       # Push the contents of `dist/` to the `output` branch. After this, files
       # are reachable at:
       #   https://raw.githubusercontent.com/<owner>/<repo>/output/<file>
-      # i.e. dist/github-contribution-grid-snake.svg becomes
-      #   .../output/github-contribution-grid-snake.svg
+      # i.e. dist/header-hero.svg becomes .../output/header-hero.svg
+      #
+      # The `output` branch is shared: activity-composite.yml and
+      # featured-from-pins.yml publish there too. The local action clones the
+      # existing branch and commits additively (it never deletes their files,
+      # never force-pushes), skips the commit when nothing changed (no history
+      # churn on every 12-hour run), and rebases and retries when one of them
+      # pushed first.
       - name: Push SVGs to the output branch
-        uses: crazy-max/ghaction-github-pages@v5
+        uses: ./.github/actions/publish-output
         with:
           target_branch: output
           build_dir: dist
-          # The `output` branch is shared: the profile-summary-cards and
-          # profile-3d-contrib workflows also publish their SVGs there. Those
-          # workflows set `keep_history: true`, which clones the existing branch
-          # and commits additively. We MUST do the same here, otherwise the
-          # default `keep_history: false` would force-push a clean tree and
-          # delete their assets on every snake run. `true` preserves all
-          # co-existing files on `output`.
-          keep_history: true
           commit_message: "chore: refresh snake contribution animation"
-          # Skip empty commits so the `output` branch only gets a new commit when
-          # the generated SVGs actually changed (avoids history churn on every
-          # 12-hour scheduled run).
-          allow_empty_commit: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}

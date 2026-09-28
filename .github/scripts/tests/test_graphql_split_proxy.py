@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------------------------
-# Unit tests for graphql_split_proxy.py — stdlib unittest only.
+# Unit tests for graphql_split_proxy.py, stdlib unittest only.
 #
 # Spins up an in-process mock upstream (ThreadingHTTPServer on an ephemeral
 # port), patches proxy.UPSTREAM to point at it, starts the proxy itself on an
@@ -247,7 +247,7 @@ class ProxyTest(unittest.TestCase):
     def test_passthrough_forwards_auth_and_relays_non200_status(self):
         # The passthrough contract is status- AND byte-verbatim in both
         # directions, including upstream failures (e.g. a REST-style 403),
-        # and must forward the Authorization header — but never log it.
+        # and must forward the Authorization header, but never log it.
         token = "bearer TESTSECRET123"
         body = json.dumps({"query": FETCH_NEXT,
                            "variables": {"login": "mguttmann", "cursor": "cursor-1"}}).encode()
@@ -256,7 +256,7 @@ class ProxyTest(unittest.TestCase):
         status, raw = self.post(body, auth=token)
         self.assertEqual(status, 403)
         self.assertEqual(raw, canned)
-        # A 403 is retryable (GitHub uses it for secondary rate limits — this
+        # A 403 is retryable (GitHub uses it for secondary rate limits; this
         # very body says "rate limit exceeded"), so the passthrough exhausts all
         # attempts and only THEN relays status and bytes verbatim.
         self.assertEqual(len(MockUpstreamHandler.requests), len(proxy.RETRY_BACKOFF) + 1)
@@ -284,7 +284,7 @@ class ProxyTest(unittest.TestCase):
         self.assertNotIn("data", data)
         self.assertEqual(data["errors"], [upstream_error])
         # Sub-query order: calendar, repositories, then TOTAL_FIELDS in order.
-        # The failure is on the 2nd total* field, i.e. the 4th sub-query — which
+        # The failure is on the 2nd total* field, i.e. the 4th sub-query, which
         # is now retried until the attempts are exhausted before aborting:
         # 3 successful sub-queries + (1 + len(RETRY_BACKOFF)) attempts.
         self.assertEqual(len(MockUpstreamHandler.requests),
@@ -319,8 +319,8 @@ class ProxyTest(unittest.TestCase):
         proxy.UPSTREAM = "http://127.0.0.1:%d/graphql" % closed_port
         try:
             # Auth is set so the 502 path (log + error message built from
-            # repr(exc)) is exercised WITH a token in play — see hygiene
-            # asserts below.
+            # repr(exc)) is exercised WITH a token in play (see hygiene
+            # asserts below).
             status, data = self.post_graphql(FETCH_FIRST, auth="bearer TESTSECRET123")
         finally:
             proxy.UPSTREAM = saved
@@ -367,7 +367,7 @@ class ProxyTest(unittest.TestCase):
         self.assertNotIn("bearer", joined.lower())
 
     def test_token_never_logged_on_sub_query_failure(self):
-        # subresponse_error() logs the FULL upstream body on failure — the
+        # subresponse_error() logs the FULL upstream body on failure, the
         # riskiest logging path. Run it with a token in play and assert the
         # log stays token-free while remaining diagnosable (sub-query name
         # and upstream message must appear).
@@ -397,7 +397,7 @@ class ProxyTest(unittest.TestCase):
         """The failure mode that painted 17.-21.07.2026 red must now self-heal.
 
         One sub-query answers RESOURCE_LIMITS_EXCEEDED once, then succeeds. The
-        overall run has to come out GREEN with complete, real data — not a
+        overall run has to come out GREEN with complete, real data, not a
         partial render and not a red job.
         """
         state = {"failures": 0}
@@ -467,7 +467,7 @@ class ProxyTest(unittest.TestCase):
         """The token-hygiene invariant must survive the new retry loop.
 
         The failure path is now walked up to four times per sub-query, and the
-        failure log prints the full upstream body — so this is exactly where a
+        failure log prints the full upstream body, so this is exactly where a
         leak would appear.
         """
         token = "bearer RETRYSECRET456"
@@ -487,7 +487,7 @@ class ProxyTest(unittest.TestCase):
         self.assertIn("secondary rate limit", joined)
 
     def test_is_retryable_classification(self):
-        """Allowlist semantics, asserted directly — no network involved."""
+        """Allowlist semantics, asserted directly, no network involved."""
         limits = {"errors": [{"type": "RESOURCE_LIMITS_EXCEEDED", "message": "x"}]}
         rated = {"errors": [{"type": "RATE_LIMITED", "message": "x"}]}
         notfound = {"errors": [{"type": "NOT_FOUND", "message": "x"}]}
