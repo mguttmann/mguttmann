@@ -1,0 +1,73 @@
+# Read-only watch over the pre-rendered project markup of the portfolio site
+# mguttmann.github.io.
+#
+# WHY: the site carries a static copy of pins.json and repos.json (the
+# contracts featured-from-pins.yml publishes to `output`), so crawlers and
+# link previews see the projects without JavaScript. That copy is renewed by
+# hand with tools/refresh-prerender.py in the site repository, on purpose:
+# the site repository has no workflow with write access to the landing page.
+# When a repository or a pin changes on GitHub and nobody runs the tool, the
+# static copy goes stale. JavaScript visitors still get the live data; clients
+# without JavaScript do not.
+#
+# WHAT: once a day this job checks out the site repository READ-ONLY and runs
+# the site's own tool in --check mode (the tool is the single source of truth
+# for what the static copy must contain). A stale copy turns the run red with
+# an annotation that names the fix. The job writes nothing, anywhere.
+#
+# TIMING: the contracts are published by featured-from-pins.yml (cron 06:00
+# UTC; scheduled runs start late). raw.githubusercontent.com caches files for
+# about five minutes, so a check right after the publish could read the old
+# contracts. 08:15 UTC leaves a wide margin. A scheduled trigger is also the
+# one GitHub reliably sends failure notifications for.
+#
+# Least privilege: read-only token, no secrets, no persisted credentials.
+name: Watch site snapshot
+
+on:
+  schedule:
+    - cron: "15 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-snapshot-watch
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Static copy matches the published contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the site repository (read-only)
+        uses: actions/checkout@v7
+        with:
+          repository: mguttmann/mguttmann.github.io
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Exit codes of refresh-prerender.py --check: 0 = matches, 1 = differs,
+      # 2 to 7 = the tool refused (markers, contract data, network). Only 1
+      # means "stale"; every other failure is reported as what it is.
+      - name: Compare the static copy with the live contracts
+        run: |
+          set +e
+          python3 tools/refresh-prerender.py --check
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "Site snapshot matches the published contracts."
+          elif [ "$rc" -eq 1 ]; then
+            echo "::error title=Site snapshot is stale::index.html of mguttmann.github.io no longer matches pins.json/repos.json. In the site repository run: python3 tools/refresh-prerender.py, review the diff and commit it."
+            exit 1
+          else
+            echo "::error title=Snapshot check could not run::tools/refresh-prerender.py --check refused with exit code ${rc} (see the log above; 7 is a network or read error)."
+            exit "$rc"
+          fi
