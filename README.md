@@ -238,11 +238,11 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**25,050 npm downloads in the last 12 months** across 6 published packages, 2,792 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 20,999 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 554 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 417.
-3 further packages account for the remaining 3,080. They are counted but not named, because only packages with a verified public repository are named.
+**25,826 npm downloads in the last 12 months** across 6 published packages, 3,391 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,362 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 562 ·
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 419.
+3 further packages account for the remaining 3,483. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 13 upstream repositories I do not own.**
@@ -261,14 +261,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
-- [`TypeWhisper/typewhisper-mac#1402`](https://github.com/TypeWhisper/typewhisper-mac/issues/1402): Groq: default dictionary prompt can drop most of a German dictation (controlled replay… · labelled `bug` · updated 2026-09-27
-- [`vlinx-io/VelaTerm#106`](https://github.com/vlinx-io/VelaTerm/issues/106): Conversation view: offer all Claude Code slash commands in Claude sessions, with per-agent… · updated 2026-09-27
-- [`vlinx-io/VelaTerm#105`](https://github.com/vlinx-io/VelaTerm/issues/105): Conversation view: no way to resume an earlier Claude conversation; /resume only works in the… · updated 2026-09-27
+- [`vlinx-io/VelaTerm#89`](https://github.com/vlinx-io/VelaTerm/issues/89): Claude model list is curated and misses new models (Opus 5.5); the installed CLI already… · updated 2026-09-28
+- [`vlinx-io/VelaTerm#102`](https://github.com/vlinx-io/VelaTerm/pull/102): feat(remote): send only what changed to remote windows and load task details on demand · updated 2026-09-28
+- [`vlinx-io/VelaTerm#101`](https://github.com/vlinx-io/VelaTerm/pull/101): fix(remote): send replies ahead of bulk traffic and bound each connection's outgoing queue · updated 2026-09-28
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 24 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, none by a maintainer.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-09-28 04:45 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/36379067889">run #110</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-09-29 04:41 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/36522768586">run #111</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
