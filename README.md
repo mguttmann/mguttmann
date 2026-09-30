@@ -238,11 +238,11 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**25,826 npm downloads in the last 12 months** across 6 published packages, 3,391 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,362 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 562 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 419.
-3 further packages account for the remaining 3,483. They are counted but not named, because only packages with a verified public repository are named.
+**26,321 npm downloads in the last 12 months** across 6 published packages, 3,868 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,673 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 570 ·
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 422.
+3 further packages account for the remaining 3,656. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 13 upstream repositories I do not own.**
@@ -261,14 +261,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
-- [`vlinx-io/VelaTerm#89`](https://github.com/vlinx-io/VelaTerm/issues/89): Claude model list is curated and misses new models (Opus 5.5); the installed CLI already… · updated 2026-09-28
-- [`vlinx-io/VelaTerm#102`](https://github.com/vlinx-io/VelaTerm/pull/102): feat(remote): send only what changed to remote windows and load task details on demand · updated 2026-09-28
-- [`vlinx-io/VelaTerm#101`](https://github.com/vlinx-io/VelaTerm/pull/101): fix(remote): send replies ahead of bulk traffic and bound each connection's outgoing queue · updated 2026-09-28
+- [`vlinx-io/VelaTerm#90`](https://github.com/vlinx-io/VelaTerm/pull/90): feat(agent): take the Claude model catalogue from the installed CLI · updated 2026-09-29
+- [`vlinx-io/VelaTerm#102`](https://github.com/vlinx-io/VelaTerm/pull/102): feat(remote): send only what changed to remote windows and load task details on demand · updated 2026-09-29
+- [`vlinx-io/VelaTerm#98`](https://github.com/vlinx-io/VelaTerm/pull/98): feat(desktop): hide the local main window instead of quitting while remote windows are open · updated 2026-09-29
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 24 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, none by a maintainer.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-09-29 04:41 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/36522768586">run #111</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-09-30 04:42 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/36670038991">run #112</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
