@@ -261,14 +261,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
-- [`anthropics/claude-code#77704`](https://github.com/anthropics/claude-code/issues/77704): \[BUG\] Custom remote MCP connectors intermittently lose all tools / aggregate tool list capped… · labelled `bug` · updated 2026-10-02
+- [`anthropics/claude-code#77704`](https://github.com/anthropics/claude-code/issues/77704): \[BUG\] Custom remote MCP connectors intermittently lose all tools / aggregate tool list capped… · labelled `bug` · updated 2026-10-07
 - [`vlinx-io/VelaTerm#90`](https://github.com/vlinx-io/VelaTerm/pull/90): feat(agent): take the Claude model catalogue from the installed CLI · updated 2026-10-01
 - [`vlinx-io/VelaTerm#87`](https://github.com/vlinx-io/VelaTerm/pull/87): feat(sidebar): reorder projects by drag and drop (#85) · updated 2026-10-01
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 24 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, none by a maintainer.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-07 04:43 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/37572851740">run #119</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-08 04:44 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/37728943624">run #120</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
