@@ -238,14 +238,14 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**26,574 npm downloads in the last 12 months** across 6 published packages, 3,477 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,794 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 584 ·
+**26,723 npm downloads in the last 12 months** across 6 published packages, 3,440 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,917 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 586 ·
 [`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 430.
-3 further packages account for the remaining 3,766. They are counted but not named, because only packages with a verified public repository are named.
+3 further packages account for the remaining 3,790. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
-**Contributions to 13 upstream repositories I do not own.**
+**Contributions to 15 upstream repositories I do not own.**
 
 **Merged upstream**
 
@@ -261,14 +261,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
+- [`FusionAuth/fusionauth-issues#3578`](https://github.com/FusionAuth/fusionauth-issues/issues/3578): \[Bug\]: SCIM PATCH replace externalId returns 200 but the value is not persisted (PUT works) · updated 2026-10-08
 - [`anthropics/claude-code#77704`](https://github.com/anthropics/claude-code/issues/77704): \[BUG\] Custom remote MCP connectors intermittently lose all tools / aggregate tool list capped… · labelled `bug` · updated 2026-10-07
 - [`vlinx-io/VelaTerm#90`](https://github.com/vlinx-io/VelaTerm/pull/90): feat(agent): take the Claude model catalogue from the installed CLI · updated 2026-10-01
-- [`vlinx-io/VelaTerm#87`](https://github.com/vlinx-io/VelaTerm/pull/87): feat(sidebar): reorder projects by drag and drop (#85) · updated 2026-10-01
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 24 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, none by a maintainer.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-08 04:44 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/37728943624">run #120</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-09 04:45 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/37885342250">run #121</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
