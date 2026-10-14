@@ -238,18 +238,18 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**26,779 npm downloads in the last 12 months** across 6 published packages, 3,078 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,926 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 594 ·
+**26,793 npm downloads in the last 12 months** across 6 published packages, 2,983 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,929 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 595 ·
 [`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 432.
-3 further packages account for the remaining 3,827. They are counted but not named, because only packages with a verified public repository are named.
+3 further packages account for the remaining 3,837. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 15 upstream repositories I do not own.**
 
 **Merged upstream**
 
-- [`code-yeongyu/oh-my-openagent`](https://github.com/code-yeongyu/oh-my-openagent) (69k stars): 2 pull requests merged by [`code-yeongyu`](https://github.com/code-yeongyu) (the repository owner), newest first:
+- [`code-yeongyu/oh-my-openagent`](https://github.com/code-yeongyu/oh-my-openagent) (70k stars): 2 pull requests merged by [`code-yeongyu`](https://github.com/code-yeongyu) (the repository owner), newest first:
   - [#4121](https://github.com/code-yeongyu/oh-my-openagent/pull/4121) fix(delegate-task): default run\_in\_background and load\_skills instead of throwing (fixes #4119)
   - [#4122](https://github.com/code-yeongyu/oh-my-openagent/pull/4122) fix(background-agent): defer parent-wake when a user message just arrived (fixes #4120)
   - [full list](https://github.com/code-yeongyu/oh-my-openagent/pulls?q=is%3Apr+is%3Amerged+author%3Amguttmann)
@@ -261,14 +261,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
+- [`FusionAuth/fusionauth-issues#3579`](https://github.com/FusionAuth/fusionauth-issues/issues/3579): \[Bug\]: SCIM PATCH on enterprise extension attribute returns 400 "\[invalid\]path" if the… · updated 2026-10-13
 - [`NousResearch/hermes-agent#72171`](https://github.com/NousResearch/hermes-agent/issues/72171): Anthropic OAuth: system-prompt shape routes subscription requests into the metered "extra… · updated 2026-10-10
 - [`FusionAuth/fusionauth-issues#3578`](https://github.com/FusionAuth/fusionauth-issues/issues/3578): \[Bug\]: SCIM PATCH replace externalId returns 200 but the value is not persisted (PUT works) · updated 2026-10-08
-- [`anthropics/claude-code#77704`](https://github.com/anthropics/claude-code/issues/77704): \[BUG\] Custom remote MCP connectors intermittently lose all tools / aggregate tool list capped… · labelled `bug` · updated 2026-10-07
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-13 04:48 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/38348189411">run #125</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-14 04:41 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/38512676346">run #126</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
