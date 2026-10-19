@@ -268,7 +268,7 @@ By night I build open-source MCP servers and agent tooling.
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-18 04:39 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/39097854903">run #130</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-19 04:43 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/39200917352">run #131</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
