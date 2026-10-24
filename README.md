@@ -238,11 +238,11 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**26,836 npm downloads in the last 12 months** across 6 published packages, 2,258 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,938 ·
+**26,856 npm downloads in the last 12 months** across 6 published packages, 2,045 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,941 ·
 [`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 599 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 433.
-3 further packages account for the remaining 3,866. They are counted but not named, because only packages with a verified public repository are named.
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 436.
+3 further packages account for the remaining 3,880. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 15 upstream repositories I do not own.**
@@ -268,7 +268,7 @@ By night I build open-source MCP servers and agent tooling.
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-23 04:43 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/39901692162">run #135</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-24 04:47 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/40063231686">run #136</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
