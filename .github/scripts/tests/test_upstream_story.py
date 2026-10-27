@@ -38,6 +38,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -383,6 +384,8 @@ class MockHandler(BaseHTTPRequestHandler):
     graphql_responder = staticmethod(default_graphql)
     npm_responder = staticmethod(default_npm)
     registry_responder = staticmethod(lambda query: (200, registry_response(registry_objects())))
+    # The packument (registry.npmjs.org/<name>), only read after a counter 404.
+    packument_responder = staticmethod(lambda name: (404, b'{"error":"not found"}'))
 
     def log_message(self, format, *args):  # noqa: A002 (stdlib signature)
         pass
@@ -420,6 +423,11 @@ class MockHandler(BaseHTTPRequestHandler):
             status, out = MockHandler.registry_responder(self.path.partition("?")[2])
             self._send(status, out)
             return
+        if self.path.startswith("/registry/"):
+            name = urllib.parse.unquote(self.path[len("/registry/"):])
+            status, out = MockHandler.packument_responder(name)
+            self._send(status, out)
+            return
         prefix = "/downloads/point/"
         if not self.path.startswith(prefix):
             self._send(404, b'{"error":"not found"}')
@@ -436,17 +444,20 @@ class StoryTest(unittest.TestCase):
         cls.mock = ThreadingHTTPServer(("127.0.0.1", 0), MockHandler)
         threading.Thread(target=cls.mock.serve_forever, daemon=True).start()
         port = cls.mock.server_address[1]
-        cls._orig = (story.GITHUB_GRAPHQL, story.NPM_API, story.NPM_SEARCH, story.RETRY_BACKOFF)
+        cls._orig = (story.GITHUB_GRAPHQL, story.NPM_API, story.NPM_SEARCH, story.NPM_REGISTRY,
+                     story.RETRY_BACKOFF)
         story.GITHUB_GRAPHQL = "http://127.0.0.1:%d/graphql" % port
         story.NPM_API = "http://127.0.0.1:%d/downloads/point" % port
         story.NPM_SEARCH = "http://127.0.0.1:%d/-/v1/search" % port
+        story.NPM_REGISTRY = "http://127.0.0.1:%d/registry" % port
         # Same NUMBER of attempts as production, without the real waits.
         story.RETRY_BACKOFF = tuple(0.0 for _ in story.RETRY_BACKOFF)
 
     @classmethod
     def tearDownClass(cls):
         cls.mock.shutdown()
-        story.GITHUB_GRAPHQL, story.NPM_API, story.NPM_SEARCH, story.RETRY_BACKOFF = cls._orig
+        (story.GITHUB_GRAPHQL, story.NPM_API, story.NPM_SEARCH, story.NPM_REGISTRY,
+         story.RETRY_BACKOFF) = cls._orig
 
     def setUp(self):
         MockHandler.requests = []
@@ -454,6 +465,7 @@ class StoryTest(unittest.TestCase):
         MockHandler.npm_responder = staticmethod(default_npm)
         MockHandler.registry_responder = staticmethod(
             lambda query: (200, registry_response(registry_objects())))
+        MockHandler.packument_responder = staticmethod(lambda name: (404, b'{"error":"not found"}'))
         self._env = dict(os.environ)
         for key in SCRUBBED:                     # a real Actions runner exports some of these
             os.environ.pop(key, None)
@@ -875,6 +887,53 @@ class StoryTest(unittest.TestCase):
         code, out = self.run_main()
         self.assertEqual(code, 1, out)
         self.assertEqual(self.readme.read_bytes(), before)
+
+    def test_npm_404_for_a_package_created_in_the_last_days_counts_as_zero(self):
+        """Live defect of 2026-10-27: action1-mcp-server was published that day,
+        the registry search listed it, the counter (which lags a day) answered
+        404 and every run degraded. A package created less than
+        NPM_NEW_PACKAGE_DAYS before the run has no counter data yet: it counts
+        with 0 downloads. An older package with a 404 still degrades."""
+        objects = registry_objects() + [_registry_object(
+            "action1-mcp-server", "git+https://github.com/mguttmann/action1-mcp.git")]
+        MockHandler.registry_responder = staticmethod(
+            lambda query: (200, registry_response(objects)))
+
+        def npm(window, name):
+            if name == "action1-mcp-server":
+                return 404, b'{"error":"package action1-mcp-server not found"}'
+            return default_npm(window, name)
+
+        def packument(created):
+            return staticmethod(lambda name: (200, json.dumps(
+                {"name": name, "time": {"created": created}}).encode()))
+
+        MockHandler.npm_responder = staticmethod(npm)
+        MockHandler.packument_responder = packument("2026-07-24T11:17:29.276Z")  # NOW - 1 day
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("::error::", out)
+        self.assertIn("**18,838 npm downloads in the last 12 months** across 7 published packages",
+                      self.story_block())
+        self.assertIn("4 further packages account for the remaining 1,360.", self.story_block())
+
+        # Created long ago: the two sources really disagree, degraded as before.
+        self.readme.write_text(README_TEMPLATE, encoding="utf-8")
+        MockHandler.packument_responder = packument("2026-01-01T00:00:00.000Z")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("::error::", out)
+        self.assertEqual(self.story_block(), "%s\n%s\n%s" % (
+            story.STORY_START, OLD_STORY, story.STORY_END))
+
+        # No readable creation time: degraded, never a guessed zero.
+        self.readme.write_text(README_TEMPLATE, encoding="utf-8")
+        MockHandler.packument_responder = staticmethod(lambda name: (404, b'{"e":1}'))
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("::error::", out)
+        self.assertEqual(self.story_block(), "%s\n%s\n%s" % (
+            story.STORY_START, OLD_STORY, story.STORY_END))
 
     def test_npm_yearly_total_far_below_the_published_one_degrades(self):
         """Live defect of 2026-10-27: api.npmjs.org answered one run with a

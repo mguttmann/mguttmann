@@ -68,7 +68,7 @@
 #       and again on the fully rendered block, so a future rendering path cannot
 #       route a denylisted owner into the README behind the first check.
 #
-# SSRF: GITHUB_GRAPHQL, NPM_API and NPM_SEARCH are HARDCODED module constants. None is
+# SSRF: GITHUB_GRAPHQL, NPM_API, NPM_SEARCH and NPM_REGISTRY are HARDCODED constants. None is
 # derived from the environment, from an argument or from a response, so no input
 # can redirect a request (the unit tests monkeypatch the attributes in-process,
 # exactly like the tests for graphql_split_proxy.py).
@@ -84,8 +84,9 @@
 #   - Degraded (the outside world: network, a connection that dies mid-
 #              response, 429/5xx after retries, timeout, malformed payload,
 #              inconsistent snapshot, an incomplete or failed npm registry
-#              search, a discovered package without download data, a yearly
-#              npm total far below the published one) -> ::error::, the STORY
+#              search, a discovered package without download data that is
+#              older than NPM_NEW_PACKAGE_DAYS (a newer one counts as 0), a
+#              yearly npm total far below the published one) -> ::error::, the STORY
 #              block stays byte-identical, only FRESH is rewritten and says
 #              "degraded", exit 0. The degradation is visible on the public
 #              README itself, not merely in a log nobody opens.
@@ -124,12 +125,19 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 GITHUB_GRAPHQL = "https://api.github.com/graphql"   # HARDCODED - never derived from env/args (no SSRF); tests monkeypatch this attribute
 NPM_API = "https://api.npmjs.org/downloads/point"   # HARDCODED, UNAUTHENTICATED: no Authorization header ever goes here
 NPM_SEARCH = "https://registry.npmjs.org/-/v1/search"  # HARDCODED, UNAUTHENTICATED, same rule
+NPM_REGISTRY = "https://registry.npmjs.org"         # HARDCODED, UNAUTHENTICATED, same rule
+# The download counter lags the registry by about a day: on 2026-10-27 the
+# search listed action1-mcp-server, published that day, and the counter
+# answered 404. A package created less than this many days before the run
+# counts with 0 downloads instead of degrading every run until the counter
+# catches up; an older package with a 404 still degrades.
+NPM_NEW_PACKAGE_DAYS = 2
 NPM_MAINTAINER = "m_guttmann"                       # the npm account, which is NOT the GitHub login
 NPM_SEARCH_SIZE = 250                               # the registry's maximum page size
 # A rolling yearly total moves by a few days of traffic between two daily runs.
@@ -535,7 +543,27 @@ def discover_packages() -> list[dict]:
     return [packages[name] for name in sorted(packages)]
 
 
-def fetch_npm_point(name: str, window: str) -> int:
+def npm_package_is_new(name: str, now: datetime) -> bool:
+    """True only when the registry proves the package was created less than
+    NPM_NEW_PACKAGE_DAYS before `now`. Anything unreadable is False."""
+    url = "%s/%s" % (NPM_REGISTRY, urllib.parse.quote(name, safe="@"))
+    try:
+        # No Authorization header: this endpoint is public and must never see a token.
+        parsed = _fetch(url, data=None,
+                        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+                        source=REGISTRY_SOURCE)
+    except (Fatal, Degraded):
+        return False
+    created = parsed.get("time")
+    created = created.get("created") if isinstance(created, dict) else None
+    try:
+        when = datetime.strptime(created[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return False
+    return timedelta(0) <= now - when < timedelta(days=NPM_NEW_PACKAGE_DAYS)
+
+
+def fetch_npm_point(name: str, window: str, now: datetime | None = None) -> int:
     url = "%s/%s/%s" % (NPM_API, window, urllib.parse.quote(name, safe="@/"))
     try:
         # No Authorization header: this endpoint is public and must never see a token.
@@ -545,6 +573,10 @@ def fetch_npm_point(name: str, window: str) -> int:
     except Fatal as exc:
         if str(exc) != "HTTP 404 from %s" % NPM_SOURCE:
             raise
+        if now is not None and npm_package_is_new(name, now):
+            log("%s: no download data yet for %s, created less than %d days ago, counted as 0"
+                % (NPM_SOURCE, name, NPM_NEW_PACKAGE_DAYS))
+            return 0
         # The registry lists the package but the counter does not know it: the
         # two sources disagree, and a sum without it would be incomplete.
         log("%s: no download data for %s" % (NPM_SOURCE, name))
@@ -573,7 +605,8 @@ def assert_npm_year_plausible(year: int, published: int | None) -> None:
         raise Degraded("%s returned a yearly total below the published one" % NPM_SOURCE)
 
 
-def collect_npm(packages: list[dict], public_repos: set[str]) -> dict:
+def collect_npm(packages: list[dict], public_repos: set[str],
+                now: datetime | None = None) -> dict:
     named: list[dict] = []
     month = year = unnamed_count = unnamed_year = 0
     for package in packages:
@@ -581,8 +614,8 @@ def collect_npm(packages: list[dict], public_repos: set[str]) -> dict:
         # Only point/last-month and point/last-year: one request each, no range
         # or pagination mechanics, and the yearly figure cannot be argued down
         # by a quiet month.
-        this_month = fetch_npm_point(name, "last-month")
-        this_year = fetch_npm_point(name, "last-year")
+        this_month = fetch_npm_point(name, "last-month", now)
+        this_year = fetch_npm_point(name, "last-year", now)
         month += this_month
         year += this_year
         _STATS["npm_ok"] += 1
@@ -932,7 +965,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise Degraded("%s returned an inconsistent snapshot" % GITHUB_SOURCE)
             packages = discover_packages()
             public_repos = fetch_public_repos(tok)
-            npm = collect_npm(packages, public_repos)
+            npm = collect_npm(packages, public_repos, now)
             assert_npm_year_plausible(npm["year"], published_npm_year(text))
             story = render_story(items, attribution, npm)
             assert_no_denylisted_owner(story)                     # GUARD (d), output side
