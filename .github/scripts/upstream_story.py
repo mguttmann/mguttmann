@@ -84,7 +84,8 @@
 #   - Degraded (the outside world: network, a connection that dies mid-
 #              response, 429/5xx after retries, timeout, malformed payload,
 #              inconsistent snapshot, an incomplete or failed npm registry
-#              search, a discovered package without download data) -> ::error::, the STORY
+#              search, a discovered package without download data, a yearly
+#              npm total far below the published one) -> ::error::, the STORY
 #              block stays byte-identical, only FRESH is rewritten and says
 #              "degraded", exit 0. The degradation is visible on the public
 #              README itself, not merely in a log nobody opens.
@@ -131,6 +132,14 @@ NPM_API = "https://api.npmjs.org/downloads/point"   # HARDCODED, UNAUTHENTICATED
 NPM_SEARCH = "https://registry.npmjs.org/-/v1/search"  # HARDCODED, UNAUTHENTICATED, same rule
 NPM_MAINTAINER = "m_guttmann"                       # the npm account, which is NOT the GitHub login
 NPM_SEARCH_SIZE = 250                               # the registry's maximum page size
+# A rolling yearly total moves by a few days of traffic between two daily runs.
+# On 2026-10-27 api.npmjs.org answered one run with a transient low last-year
+# figure (26,856 published, 17,966 rendered). A fall of more than this share
+# below the published figure is treated as a bad answer: degraded, STORY kept.
+# A tolerance instead of "any drop" because a package older than a year may
+# legitimately lose a little as old days roll out of the window.
+NPM_YEAR_MAX_DROP_PERCENT = 5
+NPM_YEAR_PUBLISHED = re.compile(r"\*\*([0-9][0-9,]*) npm downloads in the last 12 months\*\*")
 GITHUB_SOURCE = "the GitHub API"                    # how the two sources are named in the README stamp
 NPM_SOURCE = "api.npmjs.org"
 REGISTRY_SOURCE = "the npm registry search"
@@ -547,6 +556,23 @@ def fetch_npm_point(name: str, window: str) -> int:
     return downloads
 
 
+def published_npm_year(text: str) -> int | None:
+    """The yearly total currently published inside the STORY block, or None
+    when there is none to compare against (first run, other wording)."""
+    first, last = _marker_span(text, STORY_START, STORY_END)
+    match = NPM_YEAR_PUBLISHED.search(text[first:last])
+    return int(match.group(1).replace(",", "")) if match else None
+
+
+def assert_npm_year_plausible(year: int, published: int | None) -> None:
+    if published is None:
+        return
+    if year * 100 < published * (100 - NPM_YEAR_MAX_DROP_PERCENT):
+        log("%s: yearly total %s is more than %d%% below the published %s"
+            % (NPM_SOURCE, format(year, ","), NPM_YEAR_MAX_DROP_PERCENT, format(published, ",")))
+        raise Degraded("%s returned a yearly total below the published one" % NPM_SOURCE)
+
+
 def collect_npm(packages: list[dict], public_repos: set[str]) -> dict:
     named: list[dict] = []
     month = year = unnamed_count = unnamed_year = 0
@@ -907,6 +933,7 @@ def main(argv: list[str] | None = None) -> int:
             packages = discover_packages()
             public_repos = fetch_public_repos(tok)
             npm = collect_npm(packages, public_repos)
+            assert_npm_year_plausible(npm["year"], published_npm_year(text))
             story = render_story(items, attribution, npm)
             assert_no_denylisted_owner(story)                     # GUARD (d), output side
             assert_no_forbidden_dashes(story)

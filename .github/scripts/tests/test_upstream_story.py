@@ -876,6 +876,53 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertEqual(self.readme.read_bytes(), before)
 
+    def test_npm_yearly_total_far_below_the_published_one_degrades(self):
+        """Live defect of 2026-10-27: api.npmjs.org answered one run with a
+        transient low last-year figure and the README fell from 26,856 to
+        17,966. A rolling yearly total cannot fall like that between two daily
+        runs, so a drop beyond the tolerance degrades and the published block
+        stays byte-identical."""
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        published = self.story_block()
+        self.assertIn("**18,838 npm downloads", published)
+
+        def low(window, name):
+            if name == "opencode-sonarqube" and window == "last-year":
+                return 200, json.dumps({"downloads": 7795, "package": name}).encode()
+            return default_npm(window, name)
+
+        MockHandler.npm_responder = staticmethod(low)
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("::error::", out)
+        self.assertIn("9,966", out)                       # the log names both figures
+        self.assertIn("18,838", out)
+        self.assertEqual(self.story_block(), published)
+        fresh = self.fresh_block()
+        self.assertIn("degraded", fresh)
+        self.assertIn("api.npmjs.org returned a yearly total below the published one", fresh)
+        self.assertNotIn("9,966", self.readme.read_text(encoding="utf-8"))
+
+    def test_npm_yearly_total_small_drop_or_no_published_value_is_accepted(self):
+        """A rolling year may lose a little when old days roll out; a drop
+        within the tolerance renders normally, and a README without a published
+        figure (first run) has nothing to compare against."""
+        code, out = self.run_main()                       # no published figure yet
+        self.assertEqual(code, 0, out)
+        self.assertIn("**18,838 npm downloads", self.story_block())
+
+        def slightly_lower(window, name):
+            if name == "opencode-sonarqube" and window == "last-year":
+                return 200, json.dumps({"downloads": 16567, "package": name}).encode()
+            return default_npm(window, name)
+
+        MockHandler.npm_responder = staticmethod(slightly_lower)
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("::error::", out)
+        self.assertIn("**18,738 npm downloads", self.story_block())
+
     def test_inconsistent_attribution_snapshot_degrades(self):
         """D7: a closed-PR count that does not add up is never rendered."""
         self.serve(attribution=attribution_nodes()[:20])

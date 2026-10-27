@@ -220,7 +220,8 @@ By night I build open-source MCP servers and agent tooling.
     - At most three open items, each with a date (never a distance), and who
       closed the closed opencode pull requests.
   Fail-closed, with two error classes. On a failure of the outside world
-  (network, timeout, HTTP 429/5xx after retries, a malformed payload) the STORY
+  (network, timeout, HTTP 429/5xx after retries, a malformed payload, a yearly
+  npm total that falls far below the published one) the STORY
   block stays byte-for-byte as it was and the FRESH stamp reports the degraded
   run instead. A fatal error (no token, broken markers, a privacy guard
   violation, an HTTP 4xx from GitHub) writes nothing at all: STORY and FRESH
