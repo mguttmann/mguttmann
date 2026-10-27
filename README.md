@@ -238,11 +238,11 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**26,856 npm downloads in the last 12 months** across 6 published packages, 2,045 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,941 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 599 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 436.
-3 further packages account for the remaining 3,880. They are counted but not named, because only packages with a verified public repository are named.
+**17,966 npm downloads in the last 12 months** across 6 published packages, 1,971 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 15,975 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 386 ·
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 362.
+3 further packages account for the remaining 1,243. They are counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 15 upstream repositories I do not own.**
@@ -268,7 +268,7 @@ By night I build open-source MCP servers and agent tooling.
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-26 04:46 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/40270725119">run #138</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-27 04:42 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/40451194842">run #139</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
