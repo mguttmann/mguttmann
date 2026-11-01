@@ -265,14 +265,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
+- [`TypeWhisper/typewhisper-win#729`](https://github.com/TypeWhisper/typewhisper-win/issues/729): Auto paste does not reach Flutter apps: SendInput Ctrl+V without scan codes · updated 2026-10-31
 - [`NousResearch/hermes-agent#72171`](https://github.com/NousResearch/hermes-agent/issues/72171): Anthropic OAuth: system-prompt shape routes subscription requests into the metered "extra… · updated 2026-10-17
 - [`NousResearch/hermes-agent#72173`](https://github.com/NousResearch/hermes-agent/pull/72173): fix(anthropic): keep OAuth requests on included subscription billing · updated 2026-10-17
-- [`FusionAuth/fusionauth-issues#3579`](https://github.com/FusionAuth/fusionauth-issues/issues/3579): \[Bug\]: SCIM PATCH on enterprise extension attribute returns 400 "\[invalid\]path" if the… · updated 2026-10-13
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-10-31 04:33 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41169058627">run #145</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-11-01 04:36 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41273565728">run #146</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
