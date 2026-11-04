@@ -239,13 +239,13 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**30,335 npm downloads in the last 12 months** across 7 published packages, 3,754 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 21,984 ·
-[`the-real-snipeit-mcp`](https://github.com/mguttmann/the-real-snipeit-mcp) 2,792 ·
-[`the-real-unifi-mcp`](https://github.com/mguttmann/the-real-unifi-mcp) 2,386 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 1,362 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 959 ·
-[`action1-mcp-server`](https://github.com/mguttmann/action1-mcp) 607.
+**30,502 npm downloads in the last 12 months** across 7 published packages, 3,843 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 22,040 ·
+[`the-real-snipeit-mcp`](https://github.com/mguttmann/the-real-snipeit-mcp) 2,811 ·
+[`the-real-unifi-mcp`](https://github.com/mguttmann/the-real-unifi-mcp) 2,427 ·
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 1,384 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 973 ·
+[`action1-mcp-server`](https://github.com/mguttmann/action1-mcp) 622.
 1 further package accounts for the remaining 245. It is counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
@@ -265,14 +265,14 @@ By night I build open-source MCP servers and agent tooling.
 
 **Open right now**
 
+- [`anthropics/claude-code#77704`](https://github.com/anthropics/claude-code/issues/77704): \[BUG\] Custom remote MCP connectors intermittently lose all tools / aggregate tool list capped… · labelled `bug` · updated 2026-11-03
 - [`NousResearch/hermes-agent#72171`](https://github.com/NousResearch/hermes-agent/issues/72171): Anthropic OAuth: system-prompt shape routes subscription requests into the metered "extra… · updated 2026-10-17
 - [`NousResearch/hermes-agent#72173`](https://github.com/NousResearch/hermes-agent/pull/72173): fix(anthropic): keep OAuth requests on included subscription billing · updated 2026-10-17
-- [`FusionAuth/fusionauth-issues#3579`](https://github.com/FusionAuth/fusionauth-issues/issues/3579): \[Bug\]: SCIM PATCH on enterprise extension attribute returns 400 "\[invalid\]path" if the… · updated 2026-10-13
 
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-11-03 04:33 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41578842933">run #148</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-11-04 04:33 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41773944374">run #149</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
