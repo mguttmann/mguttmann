@@ -239,14 +239,14 @@ By night I build open-source MCP servers and agent tooling.
 
 <!-- STORY:START -->
 <!-- LANG: prose below is GENERATED, translate for a DE variant; every number is fetched at run time. -->
-**30,502 npm downloads in the last 12 months** across 7 published packages, 3,843 of them in the last 30 days:
-[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 22,040 ·
-[`the-real-snipeit-mcp`](https://github.com/mguttmann/the-real-snipeit-mcp) 2,811 ·
-[`the-real-unifi-mcp`](https://github.com/mguttmann/the-real-unifi-mcp) 2,427 ·
-[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 1,384 ·
-[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 973 ·
-[`action1-mcp-server`](https://github.com/mguttmann/action1-mcp) 622.
-1 further package accounts for the remaining 245. It is counted but not named, because only packages with a verified public repository are named.
+**30,625 npm downloads in the last 12 months** across 7 published packages, 3,940 of them in the last 30 days:
+[`opencode-sonarqube`](https://github.com/mguttmann/opencode-sonarqube) 22,058 ·
+[`the-real-snipeit-mcp`](https://github.com/mguttmann/the-real-snipeit-mcp) 2,830 ·
+[`the-real-unifi-mcp`](https://github.com/mguttmann/the-real-unifi-mcp) 2,454 ·
+[`the-real-bitwarden-mcp`](https://github.com/mguttmann/the-real-bitwarden-mcp) 1,412 ·
+[`@mguttmann/hetzner-cloud-mcp`](https://github.com/mguttmann/the-real-hetzner-mcp) 982 ·
+[`action1-mcp-server`](https://github.com/mguttmann/action1-mcp) 643.
+1 further package accounts for the remaining 246. It is counted but not named, because only packages with a verified public repository are named.
 <sub>Downloads, not users: CI and mirror traffic is included. Source: api.npmjs.org.</sub>
 
 **Contributions to 15 upstream repositories I do not own.**
@@ -272,7 +272,7 @@ By night I build open-source MCP servers and agent tooling.
 On [`anomalyco/opencode`](https://github.com/anomalyco/opencode/pulls?q=is%3Apr+author%3Amguttmann) 25 of my 25 pull requests are closed: 13 by the repository's own automation (`github-actions`), 11 by me, 1 by someone else.
 <!-- STORY:END -->
 <!-- FRESH:START -->
-<sub>:arrows_counterclockwise: Regenerated <strong>2026-11-04 04:33 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41773944374">run #149</a> · scheduled daily at 04:30 UTC</sub>
+<sub>:arrows_counterclockwise: Regenerated <strong>2026-11-05 04:33 UTC</strong> from the GitHub API and api.npmjs.org · <a href="https://github.com/mguttmann/mguttmann/actions/runs/41968564465">run #150</a> · scheduled daily at 04:30 UTC</sub>
 <!-- FRESH:END -->
 
 <br/>
